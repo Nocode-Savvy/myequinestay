@@ -28,14 +28,17 @@ export async function POST(request: Request) {
     const session = event.data.object as any;
     const listingId = session.metadata?.listing_id;
     const plan = session.metadata?.plan || "standard";
+    const isPremium = plan === "premium";
 
     if (listingId) {
       try {
         const supabase = await createAdminClient();
-        // Activate listing and record payment
+        // Activate listing, set plan & featured flag based on plan chosen
         await (supabase.from("listings") as any)
           .update({
             status: "active",
+            plan: plan,
+            is_featured: isPremium,
             subscription_expires_at: new Date(Date.now() + 90 * 86400000).toISOString(),
           })
           .eq("id", listingId);

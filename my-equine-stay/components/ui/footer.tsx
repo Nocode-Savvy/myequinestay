@@ -20,7 +20,7 @@ export function Footer() {
         />
 
         {/* Legal links */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-base">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
           <Link
             href="/legal/terms"
             className="underline underline-offset-4 hover:text-white transition-colors"
@@ -52,7 +52,7 @@ export function Footer() {
 
         {/* Copyright */}
         <p
-          className="mt-3 max-w-2xl text-base text-[#FAF7F2]"
+          className="mt-3 max-w-2xl text-xs sm:text-sm text-[#FAF7F2]/90 px-4"
           suppressHydrationWarning
         >
           © {new Date().getFullYear()}. {t.footer.copyright}

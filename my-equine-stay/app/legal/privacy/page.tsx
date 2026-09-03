@@ -1,59 +1,99 @@
 import Link from "next/link";
-import { siteConfig } from "@/lib/config";
+
+export const metadata = {
+  title: "Privacy Policy | My Equine Stay",
+  description: "Privacy Policy for My Equine Stay LLC — how we collect, use, and protect your information.",
+};
+
+const SECTIONS = [
+  {
+    title: "Information We Collect",
+    body: "Name, email address, phone number, location, profile information, listing information, messages, subscription details, payment information, and technical usage information.",
+  },
+  {
+    title: "How We Use Your Information",
+    list: [
+      "Operate the platform.",
+      "Allow users to connect.",
+      "Manage accounts.",
+      "Process subscription payments.",
+      "Improve platform performance.",
+      "Send important service-related communications.",
+    ],
+  },
+  {
+    title: "Platform Role",
+    body: "My Equine Stay LLC acts solely as a connection platform. We do not participate in bookings, rentals, negotiations, or agreements between users.",
+  },
+  {
+    title: "Payments",
+    body: "Payments collected through the platform are subscription fees only. My Equine Stay LLC never processes payments between users.",
+  },
+  {
+    title: "Cookies",
+    body: "The platform uses cookies and similar technologies to improve functionality and user experience.",
+  },
+  {
+    title: "Information Sharing",
+    body: "We do not sell or rent personal information. Information may only be shared with service providers, when required by law, or to protect the platform and its users.",
+  },
+  {
+    title: "Data Security",
+    body: "Reasonable safeguards are used to protect user information. However, no online system can guarantee absolute security.",
+  },
+  {
+    title: "Account Deletion",
+    body: "Users may request deletion of their account, subject to legal record-retention requirements.",
+  },
+  {
+    title: "Contact",
+    body: "For privacy questions or account deletion requests, please use the Contact page or reach out to our support team.",
+  },
+];
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-cream)] pt-28 pb-20">
-      <div className="section-container max-w-3xl bg-white p-8 md:p-12 rounded-3xl shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
-        <p className="text-overline mb-2">Privacy</p>
-        <h1 className="text-display-lg text-[var(--color-forest)] mb-6">
-          Privacy Policy
-        </h1>
-        <p className="text-xs text-[var(--color-muted)] mb-8">
-          Last updated: January 2026 · <em>[Placeholder legal document for platform master template]</em>
-        </p>
+    <div className="min-h-screen bg-[#FAF7F2] pt-24 pb-20">
+      <div className="mx-auto max-w-3xl px-4">
+        <div className="bg-white rounded-3xl shadow-[var(--shadow-card)] border border-[#E5E0D6] p-6 sm:p-10">
+          {/* Header */}
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#E1B534] mb-2">
+            Privacy
+          </p>
+          <h1 className="font-serif text-3xl sm:text-4xl text-[#1F3A2B] mb-2 leading-tight">
+            Privacy Policy
+          </h1>
+          <p className="text-xs text-[#6E7771] mb-8">
+            My Equine Stay LLC · Last updated: 2026
+          </p>
 
-        <div className="space-y-6 text-sm text-[var(--color-charcoal)] leading-relaxed">
-          <section>
-            <h2 className="font-serif font-bold text-lg text-[var(--color-forest)] mb-2">
-              1. Information We Collect
-            </h2>
-            <p>
-              We collect information you provide directly to us when creating an account, publishing a property listing, or submitting an inquiry message to an owner. This includes your name, email address, phone number, property details, and billing information (processed securely through Stripe).
-            </p>
-          </section>
+          {/* Sections */}
+          <div className="space-y-6 text-sm text-[#1B221E] leading-relaxed">
+            {SECTIONS.map((s, i) => (
+              <section key={i}>
+                <h2 className="font-semibold text-[#1F3A2B] mb-1">{s.title}</h2>
+                {s.list ? (
+                  <ul className="list-disc pl-5 space-y-1 text-[#1B221E]/80">
+                    {s.list.map((item, j) => (
+                      <li key={j}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[#1B221E]/80">{s.body}</p>
+                )}
+              </section>
+            ))}
+          </div>
 
-          <section>
-            <h2 className="font-serif font-bold text-lg text-[var(--color-forest)] mb-2">
-              2. Privacy of Property Addresses
-            </h2>
-            <p>
-              To protect the privacy and biosecurity of property owners and current guests, exact physical street addresses and entry gate codes are not published publicly on the browse map or search pages. Only approximate locations (city, zip code, distance to major equestrian venues) are displayed.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-serif font-bold text-lg text-[var(--color-forest)] mb-2">
-              3. Data Security &amp; No Selling of Personal Information
-            </h2>
-            <p>
-              We never sell or rent your personal data or email addresses to third-party data brokers. Payment details are handled exclusively through Stripe and are never stored on our application servers.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-serif font-bold text-lg text-[var(--color-forest)] mb-2">
-              4. Contact Regarding Privacy
-            </h2>
-            <p>
-              For questions regarding our privacy practices or to request deletion of your account data, contact us at <strong>{siteConfig.supportEmail}</strong>.
-            </p>
-          </section>
-        </div>
-
-        <div className="mt-10 pt-6 border-t border-[var(--color-sand-light)] flex justify-between text-xs text-[var(--color-muted)]">
-          <Link href="/legal/terms" className="hover:underline">← Terms of Service</Link>
-          <Link href="/legal/waiver" className="hover:underline">Liability Waiver →</Link>
+          {/* Nav links */}
+          <div className="mt-10 pt-6 border-t border-[#E5E0D6] flex flex-wrap justify-between gap-3 text-xs text-[#6E7771]">
+            <Link href="/legal/terms" className="hover:text-[#1F3A2B] hover:underline transition-colors">
+              ← Terms &amp; Conditions
+            </Link>
+            <Link href="/legal/waiver" className="hover:text-[#1F3A2B] hover:underline transition-colors">
+              Liability Waiver →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

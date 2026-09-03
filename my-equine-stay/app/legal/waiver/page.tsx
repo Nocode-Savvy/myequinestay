@@ -1,62 +1,122 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
-import { siteConfig } from "@/lib/config";
+
+export const metadata = {
+  title: "Liability Waiver | My Equine Stay",
+  description: "Liability Waiver for My Equine Stay LLC — equine activity risks, platform role, and user responsibilities.",
+};
+
+const SECTIONS = [
+  {
+    num: "1",
+    title: "Inherent Risks",
+    body: "Equine activities involve inherent risks including unpredictable horse behavior, falls, kicks, bites, collisions, transportation hazards, and environmental conditions.",
+  },
+  {
+    num: "2",
+    title: "Florida Equine Activity Liability Act",
+    body: "Under Florida Statutes §§773.01–773.06, equine activity sponsors are generally not liable for injuries resulting from the inherent risks of equine activities.",
+    highlight: true,
+  },
+  {
+    num: "3",
+    title: "Platform Role",
+    body: "My Equine Stay LLC operates solely as an online marketplace connecting independent users.",
+  },
+  {
+    num: "4",
+    title: "No Inspection or Certification",
+    body: "My Equine Stay LLC does not inspect, certify, verify, or guarantee the condition, legality, safety, suitability, or quality of any property, accommodation, barn, pasture, RV site, horse facility, or service listed on the platform.",
+  },
+  {
+    num: "5",
+    title: "User Responsibility",
+    body: "Users are solely responsible for evaluating safety, verifying qualifications, confirming insurance coverage, and determining whether a property, service, or provider meets their needs.",
+  },
+  {
+    num: "6",
+    title: "Assumption of Risk",
+    body: "Users voluntarily assume all risks associated with equine activities, travel, rentals, accommodations, and interactions with other users.",
+  },
+  {
+    num: "7",
+    title: "No Emergency Responsibility",
+    body: "My Equine Stay LLC is not responsible for providing emergency medical care, veterinary care, rescue services, transportation, or insurance.",
+  },
+  {
+    num: "8",
+    title: "Release of Liability",
+    body: "Users release My Equine Stay LLC, its owners, members, managers, employees, contractors, affiliates, successors, and partners from any liability arising from use of the platform, including injury, death, property damage, animal injury, theft, financial loss, or disputes between users.",
+  },
+  {
+    num: "9",
+    title: "Acknowledgment",
+    body: "By using the platform, users acknowledge that they understand the risks, voluntarily assume those risks, and agree to the terms of this Liability Waiver.",
+    highlight: true,
+  },
+];
 
 export default function WaiverPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-cream)] pt-28 pb-20">
-      <div className="section-container max-w-3xl bg-white p-8 md:p-12 rounded-3xl shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
-        <p className="text-overline mb-2">Equine Risk Notice</p>
-        <h1 className="text-display-lg text-[var(--color-forest)] mb-6">
-          Equine Liability Waiver &amp; Florida Warning Notice
-        </h1>
-        <p className="text-xs text-[var(--color-muted)] mb-8">
-          Florida Statutory Notice under Chapter 773 · <em>[Template Legal Framework]</em>
-        </p>
+    <div className="min-h-screen bg-[#FAF7F2] pt-24 pb-20">
+      <div className="mx-auto max-w-3xl px-4">
+        <div className="bg-white rounded-3xl shadow-[var(--shadow-card)] border border-[#E5E0D6] p-6 sm:p-10">
+          {/* Header */}
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#E1B534] mb-2">
+            Equine Risk Notice
+          </p>
+          <h1 className="font-serif text-3xl sm:text-4xl text-[#1F3A2B] mb-2 leading-tight">
+            Liability Waiver
+          </h1>
+          <p className="text-xs text-[#6E7771] mb-8">
+            My Equine Stay LLC · Last updated: 2026
+          </p>
 
-        {/* Warning Callout */}
-        <div className="p-6 bg-[var(--color-gold-pale)] border-2 border-[var(--color-gold)] rounded-2xl mb-8 flex gap-4">
-          <ShieldAlert size={28} className="text-[var(--color-gold)] flex-shrink-0 mt-0.5" />
-          <div className="text-xs text-[var(--color-charcoal)] space-y-2">
-            <h2 className="font-bold text-sm text-[var(--color-forest)] uppercase tracking-wide">
-              Mandatory Florida Statutory Warning (F.S. 773.04)
-            </h2>
-            <p className="font-semibold leading-relaxed">
-              WARNING: Under Florida law, an equine activity sponsor or equine professional is not liable for an injury to, or the death of, a participant in equine activities resulting from the inherent risks of equine activities.
-            </p>
+          {/* Florida Statutory Warning callout */}
+          <div className="p-5 bg-[#FDF6E3] border-2 border-[#E1B534] rounded-2xl mb-8 flex gap-3">
+            <ShieldAlert size={24} className="text-[#E1B534] shrink-0 mt-0.5" />
+            <div className="text-xs text-[#1B221E] space-y-1">
+              <p className="font-bold text-sm text-[#1F3A2B] uppercase tracking-wide">
+                Mandatory Florida Statutory Warning (F.S. §773.04)
+              </p>
+              <p className="font-semibold leading-relaxed">
+                WARNING: Under Florida law, an equine activity sponsor or equine
+                professional is not liable for an injury to, or the death of, a
+                participant in equine activities resulting from the inherent
+                risks of equine activities.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-6 text-sm text-[var(--color-charcoal)] leading-relaxed">
-          <section>
-            <h2 className="font-serif font-bold text-lg text-[var(--color-forest)] mb-2">
-              1. Inherent Risks of Equine Activities
-            </h2>
-            <p>
-              Engaging in equine activities (including stabling, turnout, riding, handling, trail riding, loading/unloading, and grooming) involves inherent risks, including but not limited to:
-            </p>
-            <ul className="list-disc pl-5 mt-2 space-y-1 text-xs">
-              <li>The propensity of equines to behave in ways that may result in injury, harm, or death to persons around them.</li>
-              <li>The unpredictability of an equine&apos;s reaction to sounds, sudden movement, unfamiliar objects, persons, or other animals.</li>
-              <li>Hazards such as surface and subsurface conditions (uneven footing, holes, slippery ground, weather hazards).</li>
-              <li>Collisions with other equines or objects.</li>
-              <li>The potential of a participant to act in a negligent manner that may contribute to injury.</li>
-            </ul>
-          </section>
+          {/* Sections */}
+          <div className="space-y-5 text-sm text-[#1B221E] leading-relaxed">
+            {SECTIONS.map((s) => (
+              <section key={s.num}>
+                <h2 className="font-semibold text-[#1F3A2B] mb-1">
+                  {s.num}. {s.title}
+                </h2>
+                <p
+                  className={
+                    s.highlight
+                      ? "p-4 bg-[#FDF6E3] border-l-4 border-[#E1B534] rounded-r-xl text-xs"
+                      : "text-[#1B221E]/80"
+                  }
+                >
+                  {s.body}
+                </p>
+              </section>
+            ))}
+          </div>
 
-          <section>
-            <h2 className="font-serif font-bold text-lg text-[var(--color-forest)] mb-2">
-              2. Independent Host-Guest Agreements
-            </h2>
-            <p>
-              {siteConfig.name} strongly advises all property owners and visiting equestrians to execute a written barn agreement, emergency veterinary authorization, and release of liability specific to the physical farm property before horse check-in.
-            </p>
-          </section>
-        </div>
-
-        <div className="mt-10 pt-6 border-t border-[var(--color-sand-light)] flex justify-between text-xs text-[var(--color-muted)]">
-          <Link href="/legal/terms" className="hover:underline">← Terms of Service</Link>
-          <Link href="/legal/privacy" className="hover:underline">Privacy Policy →</Link>
+          {/* Nav links */}
+          <div className="mt-10 pt-6 border-t border-[#E5E0D6] flex flex-wrap justify-between gap-3 text-xs text-[#6E7771]">
+            <Link href="/legal/terms" className="hover:text-[#1F3A2B] hover:underline transition-colors">
+              ← Terms &amp; Conditions
+            </Link>
+            <Link href="/legal/privacy" className="hover:text-[#1F3A2B] hover:underline transition-colors">
+              Privacy Policy →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

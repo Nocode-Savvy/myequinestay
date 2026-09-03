@@ -15,10 +15,12 @@ import {
   PawPrint,
   CalendarDays,
   MapPin,
+  Star,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthModal } from "@/components/ui/auth-modal";
 import { useLanguage } from "@/lib/i18n/context";
+import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
 
 /* ============================================================
    Animation helpers
@@ -88,14 +90,19 @@ interface ListingCardData {
   pricePerWeek: number;
   milesToWec?: number;
   images: string[];
+  isFeatured?: boolean;
 }
 
 function ListingCard({
   listing,
   index,
+  onToggleFavorite,
+  isFavorited,
 }: {
   listing: ListingCardData;
   index: number;
+  onToggleFavorite?: (id: string, e: React.MouseEvent) => void;
+  isFavorited?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -116,6 +123,7 @@ function ListingCard({
     pasture: "Pasture Rental",
     barn: "Barn / Stalls",
     other: "Other",
+    equestrian_farm: "Equestrian Farm",
   };
 
   return (
@@ -125,6 +133,7 @@ function ListingCard({
       initial="hidden"
       animate={inView ? "show" : "hidden"}
       custom={index * 0.08}
+      className="shrink-0 w-56 sm:w-64"
     >
       <Link
         href={`/property/${listing.id}`}
@@ -138,26 +147,39 @@ function ListingCard({
               alt={listing.title}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              sizes="288px"
             />
           ) : (
             <div className="w-full h-full bg-[#E5E0D6]/40" />
           )}
 
-          {/* Distance pill */}
-          {listing.milesToWec != null && (
+          {/* Featured badge or distance pill */}
+          {listing.isFeatured ? (
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#E1B534] text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm">
+              <Star className="size-2.5 fill-white" />
+              Featured
+            </span>
+          ) : listing.milesToWec != null ? (
             <span className="absolute top-3 left-3 bg-[#FAF7F2]/95 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider text-[#1F3A2B] uppercase ring-1 ring-black/5">
               {listing.milesToWec} mi to WEC
             </span>
-          )}
+          ) : null}
 
           {/* Favorite button */}
           <button
             className="absolute top-3 right-3 size-9 grid place-items-center rounded-full bg-[#FAF7F2]/90 backdrop-blur ring-1 ring-black/5 hover:scale-105 transition-transform"
-            aria-label="Save to favorites"
-            onClick={(e) => e.preventDefault()}
+            aria-label={isFavorited ? "Remove from favorites" : "Save to favorites"}
+            onClick={(e) => {
+              e.preventDefault();
+              onToggleFavorite?.(listing.id, e);
+            }}
           >
-            <Heart className="size-4 text-[#1F3A2B]" aria-hidden="true" />
+            <Heart
+              className={`size-4 transition-colors ${
+                isFavorited ? "fill-red-500 text-red-500" : "text-[#1F3A2B]"
+              }`}
+              aria-hidden="true"
+            />
           </button>
         </div>
 
@@ -626,78 +648,145 @@ function HowItWorksSection() {
 }
 
 /* ============================================================
-   Listings Section (live data from Supabase + static fallback)
+   Listings Section — horizontal scroll of featured stays
    ============================================================ */
 function ListingsSection() {
   const { t } = useLanguage();
   const [listings, setListings] = useState<ListingCardData[]>([]);
-  const [total, setTotal] = useState(0);
+  const [totalFeatured, setTotalFeatured] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchPublishedListings() {
+    async function fetchData() {
       try {
         const supabase = createClient();
+
+        // Load user favorites
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          const { data: favData } = await (supabase.from("favorites") as any)
+            .select("listing_id")
+            .eq("user_id", user.id);
+          if (favData) setFavoriteIds(new Set((favData as any[]).map((f) => f.listing_id)));
+        }
+
+        // Fetch featured (premium) listings, up to 20
         const { data, count } = await supabase
           .from("listings")
-          .select(
-            "id, title, category, neighborhood, stalls, bedrooms, price_per_night, price_per_week, miles_to_wec",
-            { count: "exact" }
-          )
-          .eq("status", "published")
+          .select("id, title, property_type, city, stalls, bedrooms, price_per_night, price_per_week, is_featured, plan", { count: "exact" })
+          .eq("status", "active")
+          .eq("is_featured", true)
           .order("created_at", { ascending: false })
-          .limit(4);
+          .limit(20);
 
         if (data && data.length > 0) {
           const mapped: ListingCardData[] = (data as any[]).map((l) => ({
             id: l.id,
             title: l.title,
-            category: l.category,
-            neighborhood: l.neighborhood ?? "Ocala",
+            category: l.property_type ?? "farm",
+            neighborhood: l.city ?? "Ocala",
             stalls: l.stalls ?? 0,
             bedrooms: l.bedrooms ?? undefined,
             pricePerNight: l.price_per_night ?? 0,
             pricePerWeek: l.price_per_week ?? 0,
-            milesToWec: l.miles_to_wec ?? undefined,
             images: [],
+            isFeatured: true,
           }));
           setListings(mapped);
-          setTotal(count ?? 0);
+          setTotalFeatured(count ?? mapped.length);
         } else {
-          setListings(STATIC_LISTINGS);
-          setTotal(STATIC_LISTINGS.length);
+          // Fallback to sample featured listings
+          const sampleFeatured = SAMPLE_LISTINGS
+            .filter((l) => l.is_featured || l.plan === "premium")
+            .slice(0, 20)
+            .map((l) => ({
+              id: l.id,
+              title: l.title,
+              category: l.property_type,
+              neighborhood: l.city,
+              stalls: l.stalls,
+              bedrooms: l.bedrooms,
+              pricePerNight: l.price_per_night,
+              pricePerWeek: l.price_per_week ?? 0,
+              milesToWec: 2.6,
+              images: l.listing_photos?.[0]?.url ? [l.listing_photos[0].url] : [],
+              isFeatured: true,
+            }));
+          setListings(sampleFeatured);
+          // total featured count from all sample listings
+          setTotalFeatured(SAMPLE_LISTINGS.filter((l) => l.is_featured || l.plan === "premium").length);
         }
       } catch {
-        setListings(STATIC_LISTINGS);
-        setTotal(STATIC_LISTINGS.length);
+        const sampleFeatured = SAMPLE_LISTINGS
+          .filter((l) => l.is_featured)
+          .slice(0, 20)
+          .map((l) => ({
+            id: l.id,
+            title: l.title,
+            category: l.property_type,
+            neighborhood: l.city,
+            stalls: l.stalls,
+            bedrooms: l.bedrooms,
+            pricePerNight: l.price_per_night,
+            pricePerWeek: l.price_per_week ?? 0,
+            milesToWec: 2.6,
+            images: l.listing_photos?.[0]?.url ? [l.listing_photos[0].url] : [],
+            isFeatured: true,
+          }));
+        setListings(sampleFeatured);
+        setTotalFeatured(sampleFeatured.length);
       } finally {
         setLoading(false);
       }
     }
-    fetchPublishedListings();
+    fetchData();
   }, []);
 
+  const toggleFavorite = async (listingId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!userId) { window.location.href = "/auth?mode=signin"; return; }
+    const supabase = createClient();
+    const isFav = favoriteIds.has(listingId);
+    setFavoriteIds((prev) => { const n = new Set(prev); isFav ? n.delete(listingId) : n.add(listingId); return n; });
+    if (isFav) {
+      await (supabase.from("favorites") as any).delete().eq("user_id", userId).eq("listing_id", listingId);
+    } else {
+      await (supabase.from("favorites") as any).insert({ user_id: userId, listing_id: listingId });
+    }
+  };
+
   return (
-    <section className="py-16 px-4">
-      <div className="mx-auto max-w-7xl">
+    <section className="py-16 overflow-x-hidden">
+      {/* Section header — padded */}
+      <div className="mx-auto max-w-7xl px-4">
         <header className="mb-8 flex items-end justify-between">
           <div>
             <h2 className="section-heading">{t.listings.heading}</h2>
             <span className="mt-3 block h-[2px] w-20 sm:w-24 bg-gradient-to-r from-[#E1B534] to-transparent" />
+            <p className="mt-2 text-xs text-[#6E7771]">
+              Premium verified equestrian stays
+            </p>
           </div>
           <Link
-            href="/search"
+            href="/search?featured=true"
             className="hidden sm:inline-flex items-center gap-1 text-sm text-[#1F3A2B] underline underline-offset-4 hover:opacity-70 transition-opacity"
           >
             {t.listings.viewAll}{" "}
             <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         </header>
+      </div>
 
-        {loading ? (
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Scroll rail — full width, no negative margins */}
+      {loading ? (
+        <div className="w-full overflow-x-auto scrollbar-hide">
+          <div className="flex gap-5 pb-4 px-4">
             {[1, 2, 3, 4].map((n) => (
-              <div key={n}>
+              <div key={n} className="shrink-0 w-56 sm:w-64">
                 <div className="skeleton aspect-[4/5] rounded-xl mb-4" />
                 <div className="skeleton h-4 w-1/3 mb-2" />
                 <div className="skeleton h-5 w-2/3 mb-1" />
@@ -705,22 +794,40 @@ function ListingsSection() {
               </div>
             ))}
           </div>
-        ) : (
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        </div>
+      ) : listings.length === 0 ? (
+        <p className="text-sm text-[#6E7771] px-4">No featured stays available right now. Check back soon!</p>
+      ) : (
+        <div className="w-full overflow-x-auto scrollbar-hide">
+          <div className="flex gap-5 pb-4 px-4">
             {listings.map((listing, i) => (
-              <ListingCard key={listing.id} listing={listing} index={i} />
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                index={i}
+                isFavorited={favoriteIds.has(listing.id)}
+                onToggleFavorite={toggleFavorite}
+              />
             ))}
           </div>
-        )}
-
-        <div className="mt-10">
-          <Link
-            href="/search"
-            className="block w-full sm:w-auto sm:inline-flex text-center py-3.5 sm:px-6 rounded-full bg-[#E1B534] text-white text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            {t.listings.viewAll}{total > 0 ? ` (${total})` : ""}
-          </Link>
         </div>
+      )}
+
+      {/* CTA — show all featured */}
+      <div className="mx-auto max-w-7xl px-4 mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <Link
+          href="/search?featured=true"
+          className="inline-flex items-center gap-2 py-3.5 px-6 rounded-full bg-[#E1B534] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Show all featured properties{totalFeatured > 0 ? ` (${totalFeatured})` : ""}
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+        <Link
+          href="/search"
+          className="text-sm text-[#6E7771] underline underline-offset-4 hover:text-[#1F3A2B] transition-colors"
+        >
+          Browse all properties
+        </Link>
       </div>
     </section>
   );

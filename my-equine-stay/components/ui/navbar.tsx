@@ -15,12 +15,104 @@ import {
   Globe,
   Check,
   User,
+  ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n/context";
 import { Language } from "@/lib/i18n/translations";
 import { AuthModal } from "@/components/ui/auth-modal";
 import type { Profile } from "@/types/database";
+
+/* ─────────────────────────────────────────────────────────────
+   Shared Language Dropdown — used on both desktop and mobile
+   ───────────────────────────────────────────────────────────── */
+
+interface LanguageDropdownProps {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  align?: "right" | "left";
+}
+
+function LanguageDropdown({ language, setLanguage, align = "right" }: LanguageDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const languages: { code: Language; label: string; flag: string; short: string }[] = [
+    { code: "en", label: "English", flag: "🇺🇸", short: "EN" },
+    { code: "es", label: "Español", flag: "🇪🇸", short: "ES" },
+    { code: "fr", label: "Français", flag: "🇫🇷", short: "FR" },
+  ];
+
+  // Close on outside click
+  useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className="inline-flex items-center gap-1 rounded-full border border-[#E5E0D6] bg-white px-2.5 py-1.5 text-xs text-[#1B221E] hover:border-[#1F3A2B] transition-colors"
+        aria-label="Change language"
+        aria-expanded={open}
+      >
+        <Globe className="size-3.5 text-[#1F3A2B]" aria-hidden="true" />
+        <span className="font-semibold uppercase">{language}</span>
+        <ChevronDown
+          className={`size-3 text-[#6E7771] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className={`absolute top-full mt-2 w-44 bg-white rounded-2xl shadow-xl border border-[#E5E0D6] py-1.5 z-50 overflow-hidden ${
+              align === "left" ? "left-0" : "right-0"
+            }`}
+          >
+            {languages.map((item) => (
+              <button
+                key={item.code}
+                type="button"
+                onClick={() => {
+                  setLanguage(item.code);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-[#FAF7F2] transition-colors ${
+                  language === item.code
+                    ? "font-semibold text-[#1F3A2B] bg-[#FAF7F2]/60"
+                    : "text-[#1B221E]"
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="text-base">{item.flag}</span>
+                  <span>{item.label}</span>
+                </span>
+                {language === item.code && (
+                  <Check className="size-3.5 text-[#1F3A2B]" />
+                )}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Main Navbar
+   ───────────────────────────────────────────────────────────── */
 
 export function Navbar() {
   const pathname = usePathname();
@@ -32,11 +124,9 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalRedirect, setAuthModalRedirect] = useState("");
 
-  const langRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -63,7 +153,6 @@ export function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
-    setLangDropdownOpen(false);
   }, [pathname]);
 
   // Focus search input when expanded
@@ -72,17 +161,6 @@ export function Navbar() {
       searchInputRef.current.focus();
     }
   }, [searchOpen]);
-
-  // Click outside to close language dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(event.target as Node)) {
-        setLangDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -106,12 +184,6 @@ export function Navbar() {
     router.push(`/search?location=${encodeURIComponent(searchQuery.trim())}`);
     setSearchOpen(false);
   };
-
-  const languages: { code: Language; label: string; flag: string }[] = [
-    { code: "en", label: "English (EN)", flag: "🇺🇸" },
-    { code: "es", label: "Español (ES)", flag: "🇪🇸" },
-    { code: "fr", label: "Français (FR)", flag: "🇫🇷" },
-  ];
 
   return (
     <>
@@ -235,89 +307,16 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Language Dropdown Selector */}
-            <div className="relative" ref={langRef}>
-              <button
-                type="button"
-                onClick={() => setLangDropdownOpen((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E0D6] bg-white px-3 py-1.5 text-xs text-[#1B221E] hover:border-[#1F3A2B] transition-colors"
-                aria-label="Change language"
-              >
-                <Globe className="size-3.5 text-[#1F3A2B]" aria-hidden="true" />
-                <span className="font-semibold uppercase">{language}</span>
-              </button>
-
-              <AnimatePresence>
-                {langDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-44 bg-white rounded-2xl shadow-xl border border-[#E5E0D6] py-1.5 z-50 overflow-hidden"
-                  >
-                    {languages.map((item) => (
-                      <button
-                        key={item.code}
-                        type="button"
-                        onClick={() => {
-                          setLanguage(item.code);
-                          setLangDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-[#FAF7F2] transition-colors ${
-                          language === item.code
-                            ? "font-semibold text-[#1F3A2B] bg-[#FAF7F2]/60"
-                            : "text-[#1B221E]"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span>{item.flag}</span>
-                          <span>{item.label}</span>
-                        </span>
-                        {language === item.code && (
-                          <Check className="size-3.5 text-[#1F3A2B]" />
-                        )}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Desktop Language Dropdown */}
+            <LanguageDropdown language={language} setLanguage={setLanguage} align="right" />
           </div>
 
-          {/* Mobile Navigation Icons */}
+          {/* ── Mobile: Globe Dropdown + Hamburger ONLY ── */}
           <div className="md:hidden flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSearchOpen((prev) => !prev)}
-              className="size-9 grid place-items-center rounded-full ring-1 ring-[#E5E0D6] text-[#1F3A2B]"
-              aria-label="Search"
-            >
-              <Search className="size-4" aria-hidden="true" />
-            </button>
+            {/* Mobile Language Dropdown */}
+            <LanguageDropdown language={language} setLanguage={setLanguage} align="right" />
 
-            <button
-              type="button"
-              onClick={() =>
-                setLanguage(
-                  language === "en" ? "es" : language === "es" ? "fr" : "en"
-                )
-              }
-              className="inline-flex items-center gap-1 rounded-full border border-[#E5E0D6] bg-white px-2.5 py-1 text-xs text-[#1B221E]"
-              aria-label="Switch language"
-            >
-              <Globe className="size-3 text-[#1F3A2B]" />
-              <span className="font-semibold uppercase">{language}</span>
-            </button>
-
-            <Link
-              href="/favorites"
-              onClick={(e) => handleProtectedClick(e, "/favorites")}
-              className="size-9 grid place-items-center rounded-full ring-1 ring-[#E5E0D6] text-[#1F3A2B]"
-            >
-              <Heart className="size-4" aria-hidden="true" />
-            </Link>
-
+            {/* Hamburger */}
             <button
               type="button"
               className="size-9 grid place-items-center rounded-full ring-1 ring-[#E5E0D6] text-[#1B221E]"
@@ -333,7 +332,7 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Expandable Search Bar Dropdown directly below navbar (Screenshot 5) */}
+        {/* Expandable Search Bar (Desktop Only) */}
         <AnimatePresence>
           {searchOpen && (
             <motion.div
@@ -376,9 +375,29 @@ export function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.18 }}
-            className="md:hidden fixed inset-x-0 top-16 z-30 bg-[#FAF7F2]/98 backdrop-blur-md border-b border-[#E5E0D6] shadow-lg"
+            className="md:hidden fixed inset-x-0 top-16 z-30 bg-[#FAF7F2]/98 backdrop-blur-md border-b border-[#E5E0D6] shadow-lg overflow-y-auto max-h-[calc(100vh-4rem)]"
           >
             <div className="max-w-7xl mx-auto px-4 py-5 space-y-1">
+              {/* Search inside drawer on mobile */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!searchQuery.trim()) return;
+                  router.push(`/search?location=${encodeURIComponent(searchQuery.trim())}`);
+                  setMobileOpen(false);
+                }}
+                className="relative mb-3"
+              >
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[#6E7771]" />
+                <input
+                  type="text"
+                  placeholder="Search properties…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-full border border-[#E5E0D6] bg-white text-sm text-[#1B221E] outline-none focus:border-[#1F3A2B] transition-all"
+                />
+              </form>
+
               <Link
                 href="/"
                 className="block py-3 px-4 rounded-xl text-sm font-medium text-[#1B221E]/80 hover:bg-[#1F3A2B]/5"
@@ -448,7 +467,7 @@ export function Navbar() {
         )}
       </AnimatePresence>
 
-      {/* Sign In To Continue Gatekeeper Modal (Screenshot 4) */}
+      {/* Sign In To Continue Gatekeeper Modal */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
