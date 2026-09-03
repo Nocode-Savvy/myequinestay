@@ -142,18 +142,18 @@ function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-3 mt-12 pt-8 border-t border-[#E5E0D6]">
+    <div className="flex items-center justify-center gap-1.5 sm:gap-3 mt-10 pt-6 border-t border-[#E5E0D6] w-full max-w-full">
       <button
         type="button"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#E5E0D6] bg-white text-sm text-[#1B221E] hover:border-[#1F3A2B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="inline-flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-[#E5E0D6] bg-white text-xs sm:text-sm text-[#1B221E] hover:border-[#1F3A2B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
       >
-        <ChevronLeft className="size-4" aria-hidden="true" />
-        Previous
+        <ChevronLeft className="size-3.5 sm:size-4" aria-hidden="true" />
+        <span className="hidden sm:inline">Previous</span>
       </button>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 sm:gap-1.5">
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
           const isNear =
             page === 1 ||
@@ -161,8 +161,8 @@ function Pagination({
             Math.abs(page - currentPage) <= 1;
 
           if (!isNear) {
-            if (page === 2 && currentPage > 4) return <span key={page} className="text-[#6E7771] text-sm">…</span>;
-            if (page === totalPages - 1 && currentPage < totalPages - 3) return <span key={page} className="text-[#6E7771] text-sm">…</span>;
+            if (page === 2 && currentPage > 4) return <span key={page} className="text-[#6E7771] text-xs sm:text-sm px-1">…</span>;
+            if (page === totalPages - 1 && currentPage < totalPages - 3) return <span key={page} className="text-[#6E7771] text-xs sm:text-sm px-1">…</span>;
             return null;
           }
 
@@ -171,7 +171,7 @@ function Pagination({
               key={page}
               type="button"
               onClick={() => onPageChange(page)}
-              className={`size-9 rounded-full text-sm font-medium transition-colors ${
+              className={`size-8 sm:size-9 rounded-full text-xs sm:text-sm font-medium transition-colors shrink-0 ${
                 page === currentPage
                   ? "bg-[#1F3A2B] text-white"
                   : "border border-[#E5E0D6] bg-white text-[#1B221E] hover:border-[#1F3A2B]"
@@ -187,10 +187,10 @@ function Pagination({
         type="button"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#E5E0D6] bg-white text-sm text-[#1B221E] hover:border-[#1F3A2B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="inline-flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-[#E5E0D6] bg-white text-xs sm:text-sm text-[#1B221E] hover:border-[#1F3A2B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
       >
-        Next
-        <ChevronRight className="size-4" aria-hidden="true" />
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight className="size-3.5 sm:size-4" aria-hidden="true" />
       </button>
     </div>
   );
@@ -323,7 +323,7 @@ function BrowseContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] overflow-x-hidden">
+    <div className="min-h-screen bg-[#FAF7F2] overflow-x-hidden w-full">
       {/* Page title */}
       <div className="mx-auto max-w-7xl px-4 pt-6">
         <h1 className="section-heading">{t.search.heading}</h1>
@@ -334,9 +334,9 @@ function BrowseContent() {
         </p>
       </div>
 
-      {/* Property type pills — own full-width scroll container, NO negative margin */}
-      <div className="mt-6 w-full overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2 pb-2 px-4 w-max min-w-full">
+      {/* Property type pills — smoothly scrollable, strictly contained */}
+      <div className="mt-5 w-full max-w-full overflow-x-auto scrollbar-hide">
+        <div className="inline-flex gap-2 pb-2 px-4">
           {CATEGORIES.map((cat) => {
             const isActive = selectedType === cat.value;
             return (
@@ -415,12 +415,12 @@ function BrowseContent() {
       </div>
 
       {/* Main Content Area */}
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 w-full max-w-full">
         {loading ? (
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 sm:gap-8 w-full max-w-full">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div key={n} className="space-y-3">
-                <div className="skeleton aspect-[4/5] rounded-xl" />
+                <div className="skeleton aspect-[4/3] rounded-2xl w-full" />
                 <div className="skeleton h-4 w-1/3" />
                 <div className="skeleton h-5 w-2/3" />
                 <div className="skeleton h-4 w-1/2" />
@@ -517,7 +517,7 @@ function BrowseContent() {
         ) : (
           /* Standard Grid with Pagination */
           <>
-            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 sm:gap-8 w-full max-w-full">
               {paginatedListings.map((listing) => {
                 const coverPhoto =
                   listing.listing_photos?.find((p) => p.is_cover)?.url ??
@@ -527,14 +527,16 @@ function BrowseContent() {
                 const period = listing.price_per_night ? "night" : "week";
                 const cat =
                   categoryLabels[listing.property_type] ?? "Equestrian Farm";
+                const isFeatured = listing.is_featured || listing.plan === "premium";
 
                 return (
                   <Link
                     key={listing.id}
                     href={`/property/${listing.id}`}
-                    className="group block"
+                    className="group block w-full"
                   >
-                    <div className="relative mb-4 overflow-hidden rounded-xl aspect-[4/5] bg-[#E5E0D6]/30">
+                    {/* 4:3 social media content post ratio — compact so full card details fit at a glance */}
+                    <div className="relative mb-3 overflow-hidden rounded-2xl aspect-[4/3] bg-[#E5E0D6]/30 w-full">
                       {coverPhoto ? (
                         <Image
                           src={coverPhoto}
@@ -550,7 +552,7 @@ function BrowseContent() {
                       )}
 
                       {/* Featured badge — top-left */}
-                      {listing.is_featured || listing.plan === "premium" ? (
+                      {isFeatured ? (
                         <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#E1B534] text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm">
                           <Star className="size-2.5 fill-white" />
                           Featured
@@ -561,7 +563,7 @@ function BrowseContent() {
                         </span>
                       )}
 
-                      {/* Favorite button — real Supabase save */}
+                      {/* Favorite button */}
                       <button
                         className="absolute top-3 right-3 size-9 grid place-items-center rounded-full bg-[#FAF7F2]/90 backdrop-blur ring-1 ring-black/5 hover:scale-105 transition-transform"
                         aria-label={favoriteIds.has(listing.id) ? "Remove from favorites" : "Save to favorites"}
@@ -578,26 +580,27 @@ function BrowseContent() {
                       </button>
                     </div>
 
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-widest text-[#E1B534] mb-1">
+                    {/* Full details visible at a glance */}
+                    <div className="flex justify-between items-start gap-3 w-full">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] uppercase tracking-widest text-[#E1B534] mb-1 font-semibold">
                           {cat}
                         </p>
-                        <h3 className="font-medium text-[#1B221E] truncate">
+                        <h3 className="font-medium text-[#1B221E] text-base leading-snug truncate">
                           {listing.title}
                         </h3>
-                        <p className="text-sm text-[#6E7771] mt-0.5">
+                        <p className="text-xs sm:text-sm text-[#6E7771] mt-0.5 truncate">
                           {listing.city}
                           {listing.stalls > 0 ? ` · ${listing.stalls} stalls` : ""}
                           {listing.bedrooms > 0 ? ` · ${listing.bedrooms} bd` : ""}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-serif text-lg text-[#1F3A2B] leading-none">
+                        <p className="font-serif text-lg sm:text-xl text-[#1F3A2B] leading-none">
                           ${displayPrice}
                         </p>
                         <p className="text-[10px] uppercase text-[#6E7771] tracking-widest mt-1">
-                          {period}
+                          / {period}
                         </p>
                       </div>
                     </div>

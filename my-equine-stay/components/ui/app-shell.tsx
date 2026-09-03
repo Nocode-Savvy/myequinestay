@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <LanguageProvider>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 w-full max-w-full min-w-0">{children}</main>
       <Footer />
 
       {/* Floating: Ask AI trigger button */}
