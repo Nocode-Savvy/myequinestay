@@ -43,6 +43,12 @@ test.describe("Owner Listing Wizard & Draft Auto-Save", () => {
     await page.click("button:has-text('Continue')");
     await expect(page.locator("h2")).toContainText("Pin your property location");
 
+    // Google Maps container (or graceful fallback) must be present
+    const mapContainer = page.locator("[data-testid='google-map-container']");
+    await expect(mapContainer).toBeVisible({ timeout: 10000 });
+    // No raw Google Maps crash text
+    await expect(page.locator("text=Oops! Something went wrong")).not.toBeVisible();
+
     // Advance to Step 4: Accommodation
     await page.click("button:has-text('Continue')");
     await expect(page.locator("h2")).toContainText("Accommodation");

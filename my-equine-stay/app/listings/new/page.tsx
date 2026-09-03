@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Upload, Trash2, Star, MapPin, Edit3, ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
+import { GoogleMapWrapper } from "@/components/ui/google-map";
 
 /* ============================================================
    Step definitions matching screenshots exactly
@@ -736,20 +737,26 @@ function WizardForm() {
                   Place the pin at your gate, driveway entrance, or another nearby location. For privacy, you do not need to mark the exact location of your home. Guests will only see the approximate location you choose on the map, not your exact address. You can drag the pin to adjust its location.
                 </p>
 
-                {/* Map placeholder — shown when no Mapbox token */}
-                <div className="h-64 rounded-xl bg-[#E5E0D6]/30 border border-[#E5E0D6] flex flex-col items-center justify-center text-center p-6">
-                  <MapPin size={32} className="text-[#E1B534] mb-2" />
-                  <p className="text-sm font-medium text-[#1B221E]">
-                    {latitude.toFixed(3)}, {longitude.toFixed(3)}
-                  </p>
-                  <p className="text-xs text-[#6E7771] mt-1">
-                    Pin will be visible on the map once address is geocoded.
-                  </p>
-                </div>
+                {/* Interactive Google Map with draggable pin */}
+                <GoogleMapWrapper
+                  mode="wizard"
+                  latitude={latitude}
+                  longitude={longitude}
+                  onMarkerDragEnd={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }}
+                  className="h-72 rounded-xl border border-[#E5E0D6] overflow-hidden"
+                />
 
                 <div className="flex items-center gap-3 rounded-xl border border-[#E5E0D6] bg-[#FAF7F2] px-4 py-3">
                   <MapPin size={16} className="text-[#E1B534] shrink-0" />
-                  <span className="text-sm text-[#6E7771]">Tap the map to drop your pin.</span>
+                  <span className="text-sm text-[#6E7771]">
+                    Drag the pin to fine-tune your location. Coordinates:{" "}
+                    <span className="font-medium text-[#1B221E]">
+                      {latitude.toFixed(4)}, {longitude.toFixed(4)}
+                    </span>
+                  </span>
                 </div>
               </div>
             )}

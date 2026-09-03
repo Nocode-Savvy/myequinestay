@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/filter-modal";
 import type { ListingWithPhotos } from "@/types/database";
 import { useLanguage } from "@/lib/i18n/context";
+import { GoogleMapWrapper } from "@/components/ui/google-map";
 
 const CATEGORIES = [
   { value: "", label: "All types" },
@@ -54,71 +55,15 @@ const categoryLabels: Record<string, string> = {
 };
 
 /* ============================================================
-   Mapbox Component
+   Google Maps Component (browse / search view)
    ============================================================ */
-function MapboxView({ listings }: { listings: ListingWithPhotos[] }) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<unknown>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
-
-    import("mapbox-gl").then((mapboxgl) => {
-      const mapboxglModule = mapboxgl.default || mapboxgl;
-      (mapboxglModule as { accessToken: string }).accessToken =
-        process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
-
-      const map = new (mapboxglModule as any).Map({
-        container: mapContainer.current!,
-        style: "mapbox://styles/mapbox/outdoors-v12",
-        center: [-82.14, 29.19],
-        zoom: 9.5,
-      });
-
-      mapRef.current = map;
-
-      map.on("load", () => {
-        setMapLoaded(true);
-        listings.forEach((listing) => {
-          if (!listing.latitude || !listing.longitude) return;
-          const el = document.createElement("div");
-          el.className =
-            "px-2.5 py-1 bg-[#1F3A2B] text-white rounded-full text-xs font-semibold shadow-md cursor-pointer hover:scale-110 transition-transform";
-          el.textContent = `$${listing.price_per_night}`;
-
-          new (mapboxglModule as any).Marker({ element: el })
-            .setLngLat([listing.longitude, listing.latitude])
-            .addTo(map);
-        });
-      });
-    });
-
-    return () => {
-      if (mapRef.current) {
-        (mapRef.current as { remove: () => void }).remove();
-        mapRef.current = null;
-      }
-    };
-  }, [listings]);
-
+function GoogleMapView({ listings }: { listings: ListingWithPhotos[] }) {
   return (
-    <div className="relative w-full h-[550px] lg:h-[650px] rounded-2xl overflow-hidden border border-[#E5E0D6] bg-white sticky top-24">
-      <div ref={mapContainer} className="absolute inset-0" />
-      {!mapLoaded && (
-        <div className="absolute inset-0 bg-[#FAF7F2] flex flex-col items-center justify-center p-6 text-center">
-          <div className="size-12 rounded-full bg-[#1F3A2B]/10 text-[#1F3A2B] grid place-items-center mb-3">
-            <MapPin size={24} />
-          </div>
-          <p className="font-serif text-xl text-[#1B221E] mb-1">
-            Ocala Equestrian Map
-          </p>
-          <p className="text-xs text-[#6E7771] max-w-xs">
-            Viewing {listings.length} verified stays around World Equestrian Center and HITS Ocala.
-          </p>
-        </div>
-      )}
-    </div>
+    <GoogleMapWrapper
+      mode="browse"
+      listings={listings}
+      className="w-full h-[550px] lg:h-[650px] rounded-2xl overflow-hidden border border-[#E5E0D6] bg-white sticky top-24"
+    />
   );
 }
 
@@ -353,7 +298,7 @@ function BrowseContent() {
         ) : showMap ? (
           /* Split View matching Screenshot 3: Map on Left, Compact Cards on Right */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <MapboxView listings={listings} />
+            <GoogleMapView listings={listings} />
 
             <div className="space-y-4">
               {listings.map((listing) => {

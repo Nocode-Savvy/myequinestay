@@ -51,6 +51,14 @@ test.describe("Guest Flow — Browse, Filter, Detail & Inquiries", () => {
     if (await mapToggle.isVisible()) {
       await mapToggle.click();
       await expect(page.locator("button:has-text('Show list')")).toBeVisible();
+
+      // Google Maps container (or fallback) must be visible — not blank
+      const mapContainer = page.locator("[data-testid='google-map-container']");
+      await expect(mapContainer).toBeVisible({ timeout: 10000 });
+
+      // No raw "Something went wrong" text visible
+      await expect(page.locator("text=Oops! Something went wrong")).not.toBeVisible();
+
       // Click back to "Show list"
       await page.locator("button:has-text('Show list')").click();
       await expect(page.locator("button:has-text('Show map')")).toBeVisible();
