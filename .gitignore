@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+my-equine-stay/node_modules/
+
+# Next.js build
+.next/
+my-equine-stay/.next/
+out/
+my-equine-stay/out/
+
+# Environment files
+.env*
+!my-equine-stay/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Tests
+test-results/
+playwright-report/
+my-equine-stay/test-results/
+my-equine-stay/playwright-report/
+
+# Vercel
+.vercel/
