@@ -188,23 +188,35 @@ function AuthForm() {
           </div>
 
           {/* Password */}
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-[#E5E0D6] bg-[#FAF7F2]/40 px-3.5 py-3 pr-10 text-sm outline-none focus:border-[#1F3A2B] focus:bg-white transition-all"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6E7771] hover:text-[#1B221E]"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+          <div className="space-y-1">
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-[#E5E0D6] bg-[#FAF7F2]/40 px-3.5 py-3 pr-10 text-sm outline-none focus:border-[#1F3A2B] focus:bg-white transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6E7771] hover:text-[#1B221E]"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            {mode === "signin" && (
+              <div className="flex justify-end pt-0.5">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-[#1F3A2B] hover:text-[#E1B534] font-medium transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Password rules in signup mode matching Screenshot 5 */}

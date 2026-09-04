@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Lock, Mail, ArrowRight, AlertCircle } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -12,6 +12,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+  const resetSuccess = searchParams.get("reset") === "success";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -76,6 +77,13 @@ function LoginForm() {
         className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4"
       >
         <div className="bg-white py-8 px-6 shadow-[var(--shadow-card)] rounded-3xl border border-[var(--color-sand-light)] sm:px-10 space-y-6">
+          {resetSuccess && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
+              <CheckCircle2 size={16} className="flex-shrink-0 text-emerald-600" />
+              <span>Your password has been successfully updated! Please sign in with your new password.</span>
+            </div>
+          )}
+
           {error && (
             <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700">
               <AlertCircle size={16} className="flex-shrink-0" />
@@ -107,8 +115,8 @@ function LoginForm() {
                   Password
                 </label>
                 <Link
-                  href="/contact?topic=forgot-password"
-                  className="text-xs text-[var(--color-gold)] hover:underline"
+                  href="/forgot-password"
+                  className="text-xs text-[var(--color-gold)] font-medium hover:underline"
                 >
                   Forgot password?
                 </Link>
