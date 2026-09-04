@@ -25,7 +25,7 @@ export default async function AdminLayout({
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .single()) as any;
+    .single()) as { data: { role?: string } | null };
 
   // 3. Strict server-side verification: must have role === 'admin'
   if (profile?.role !== "admin") {
@@ -35,7 +35,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col md:flex-row">
       <AdminSidebar />
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-10 overflow-y-auto max-w-7xl w-full">
         {children}
       </main>
     </div>
