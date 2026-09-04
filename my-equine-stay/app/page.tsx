@@ -763,21 +763,12 @@ function ListingsSection() {
     <section className="py-16 overflow-x-hidden">
       {/* Section header — padded */}
       <div className="mx-auto max-w-7xl px-4">
-        <header className="mb-8 flex items-end justify-between">
-          <div>
-            <h2 className="section-heading">{t.listings.heading}</h2>
-            <span className="mt-3 block h-[2px] w-20 sm:w-24 bg-gradient-to-r from-[#E1B534] to-transparent" />
-            <p className="mt-2 text-xs text-[#6E7771]">
-              Premium verified equestrian stays
-            </p>
-          </div>
-          <Link
-            href="/search?featured=true"
-            className="hidden sm:inline-flex items-center gap-1 text-sm text-[#1F3A2B] underline underline-offset-4 hover:opacity-70 transition-opacity"
-          >
-            {t.listings.viewAll}{" "}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
+        <header className="mb-8">
+          <h2 className="section-heading">{t.listings.heading}</h2>
+          <span className="mt-3 block h-[2px] w-20 sm:w-24 bg-gradient-to-r from-[#E1B534] to-transparent" />
+          <p className="mt-2 text-xs text-[#6E7771]">
+            Premium verified equestrian stays
+          </p>
         </header>
       </div>
 
@@ -813,20 +804,14 @@ function ListingsSection() {
         </div>
       )}
 
-      {/* CTA — show all featured */}
-      <div className="mx-auto max-w-7xl px-4 mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <Link
-          href="/search?featured=true"
-          className="inline-flex items-center gap-2 py-3.5 px-6 rounded-full bg-[#E1B534] text-white text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          Show all featured properties{totalFeatured > 0 ? ` (${totalFeatured})` : ""}
-          <ArrowRight className="size-4" aria-hidden="true" />
-        </Link>
+      {/* CTA — view all properties */}
+      <div className="mx-auto max-w-7xl px-4 mt-8">
         <Link
           href="/search"
-          className="text-sm text-[#6E7771] underline underline-offset-4 hover:text-[#1F3A2B] transition-colors"
+          className="inline-flex items-center gap-2 py-3.5 px-6 rounded-full bg-[#E1B534] text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-sm"
         >
-          Browse all properties
+          View all properties{totalFeatured > 0 ? ` (${totalFeatured})` : ""}
+          <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
       </div>
     </section>
