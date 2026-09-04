@@ -64,10 +64,21 @@ my-equine-stay/
 
 ---
 
-## 4. Key Architectural Decisions (Documented per Brief)
+## 5. Subscription Billing & Proration Policy
 
-1. **Working Mapbox Integration**: Replaced the broken Google Maps implementation from the legacy site with a reliable Mapbox GL JS setup. Displays approximate area markers to protect property owner and resident horse biosecurity.
-2. **0% Platform Booking Commission Model**: Listings operate on a flat 3-month subscription ($59 Standard or $89 Premium). Guests message owners directly via the embedded inquiry form with zero commission deducted from stays.
-3. **Live Immediate Activation**: Upon successful checkout through Stripe, listings transition to `active` status immediately. Administrators retain the ability to unpublish, feature, or delete any listing from `/admin`.
-4. **Resilient Offline / Demo Mode**: The application gracefully detects when live Supabase or Stripe credentials are absent, providing realistic sample data and test checkout simulations so that demonstrations never fail.
-5. **Config-Driven White-Labeling**: Colors, site name, tagline, support emails, and charitable partners can be updated in real time via the Admin settings panel without code modifications.
+### Flat 3-Month Plan Tiers
+- **Standard**: $59 per 3-month cycle ($19.99/mo equivalent)
+- **Premium**: $89 per 3-month cycle ($29.99/mo equivalent, includes homepage feature badge)
+
+### Plan Switching & Proration Policy (`proration_behavior: 'none'`)
+When a property owner transitions between Standard and Premium tiers:
+1. **No Stripe Proration**: `proration_behavior: 'none'` is strictly enforced on all `stripe.subscriptions.update()` requests (`/api/listings/[id]/change-plan`).
+2. **No Partial Credits or Retroactive Invoices**: Stripe will not calculate partial daily credits or generate mid-cycle prorated line items. The new rate takes effect cleanly without fractional charge complications.
+3. **Marketplace Feature Synchronization**: The listing's `plan` and `is_featured` flags update immediately in the database upon plan change, ensuring instant marketing visibility without billing distortion.
+
+### Listing Deletion & Subscription Termination
+When an owner deletes a property listing from their dashboard:
+1. **Immediate Cancellation**: The platform calls `/api/listings/[id]/cancel-subscription`, retrieving the listing's Stripe subscription and immediately invoking `stripe.subscriptions.cancel(subscriptionId)`.
+2. **Owner Warning Confirmation**: Owners are prompted with an explicit confirmation dialog: *"Deleting this listing will immediately cancel its active subscription. This cannot be undone."*
+3. **Graceful Fallback**: If Stripe is unconfigured or operating in local development mode, the cancellation gracefully logs a notice and allows deletion to complete without blocking testing workflows.
+

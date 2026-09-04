@@ -1,34 +1,112 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Star, Trash2, Eye, Edit3, CheckCircle2, XCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
+import { Search, Star, Trash2, Eye, Edit3, Building2, AlertCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { propertyTypeLabel } from "@/lib/utils";
 
+interface ListingPhoto {
+  id: string;
+  url: string;
+  is_cover: boolean;
+}
+
+interface AdminListing {
+  id: string;
+  title: string;
+  property_type: string;
+  city: string;
+  price_per_night: number;
+  plan: "standard" | "premium";
+  status: "active" | "draft" | "paused" | "expired";
+  is_featured: boolean;
+  stalls: number;
+  created_at: string;
+  listing_photos?: ListingPhoto[];
+  profiles?: {
+    full_name: string;
+    email: string;
+  };
+}
+
 export default function AdminListingsPage() {
-  const [listings, setListings] = useState(SAMPLE_LISTINGS);
+  const supabase = createClient();
+
+  const [listings, setListings] = useState<AdminListing[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const toggleFeatured = (id: string) => {
-    setListings(
-      listings.map((l) =>
-        l.id === id ? { ...l, is_featured: !l.is_featured } : l
-      )
-    );
+  const loadListings = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = (await (supabase
+        .from("listings") as any)
+        .select("*, listing_photos(*), profiles(full_name, email)")
+        .order("created_at", { ascending: false })) as any;
+
+      if (!error && data) {
+        setListings(data);
+      } else {
+        setListings([]);
+      }
+    } catch (err) {
+      console.error("Failed to load listings:", err);
+      setListings([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteListing = (id: string) => {
-    if (window.confirm("Are you sure you want to remove this listing?")) {
-      setListings(listings.filter((l) => l.id !== id));
+  useEffect(() => {
+    loadListings();
+  }, []);
+
+  const toggleFeatured = async (id: string, currentFeatured: boolean) => {
+    const nextVal = !currentFeatured;
+    setListings((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, is_featured: nextVal } : l))
+    );
+
+    try {
+      await (supabase.from("listings") as any)
+        .update({ is_featured: nextVal })
+        .eq("id", id);
+    } catch (err) {
+      console.error("Failed to update featured status:", err);
+      // Revert on error
+      setListings((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, is_featured: currentFeatured } : l))
+      );
+    }
+  };
+
+  const deleteListing = async (id: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to permanently delete this listing? Any active Stripe subscription will be cancelled."
+      )
+    ) {
+      return;
+    }
+
+    setListings((prev) => prev.filter((l) => l.id !== id));
+
+    try {
+      // Cancel Stripe subscription
+      await fetch(`/api/listings/${id}/cancel-subscription`, { method: "POST" });
+      // Delete from database
+      await (supabase.from("listings") as any).delete().eq("id", id);
+    } catch (err) {
+      console.error("Failed to delete listing:", err);
+      loadListings();
     }
   };
 
   const filtered = listings.filter((l) =>
-    l.title.toLowerCase().includes(search.toLowerCase()) ||
-    l.city.toLowerCase().includes(search.toLowerCase())
+    (l.title || "").toLowerCase().includes(search.toLowerCase()) ||
+    (l.city || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -76,11 +154,27 @@ export default function AdminListingsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E0D6]">
-              {filtered.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-[#6E7771]">
-                    <p className="font-medium text-sm text-[#1B221E] mb-1">No listings found</p>
-                    <p className="text-xs">No listings match your search query &quot;{search}&quot;</p>
+                  <td colSpan={7} className="p-12 text-center text-[#6E7771]">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="size-6 border-2 border-[#1F3A2B] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-xs">Loading listings from live database…</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center text-[#6E7771]">
+                    <Building2 size={32} className="text-[#E5E0D6] mx-auto mb-2" />
+                    <p className="font-medium text-sm text-[#1B221E] mb-1">
+                      {search ? `No listings match "${search}"` : "No properties listed yet"}
+                    </p>
+                    <p className="text-xs max-w-sm mx-auto">
+                      {search
+                        ? "Try clearing your search terms to see all properties."
+                        : "When property owners add equestrian stays, they will appear here for moderation, approval, and homepage featuring."}
+                    </p>
                   </td>
                 </tr>
               ) : (
@@ -91,11 +185,18 @@ export default function AdminListingsPage() {
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="relative w-12 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[#FAF7F2] border border-[#E5E0D6]">
-                            {cover && <Image src={cover} alt={l.title} fill className="object-cover" />}
+                            {cover ? (
+                              <Image src={cover} alt={l.title} fill className="object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[9px] text-[#6E7771]">No photo</div>
+                            )}
                           </div>
                           <div>
                             <p className="font-semibold text-[#1B221E] line-clamp-1">{l.title}</p>
-                            <p className="text-[#6E7771] text-[11px]">{l.city}, FL · {l.stalls} stalls</p>
+                            <p className="text-[#6E7771] text-[11px]">
+                              {l.city ? `${l.city}, FL · ` : ""}{l.stalls || 0} stalls
+                              {l.profiles?.full_name ? ` · Host: ${l.profiles.full_name}` : ""}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -115,7 +216,7 @@ export default function AdminListingsPage() {
                       <td className="p-4">
                         <button
                           type="button"
-                          onClick={() => toggleFeatured(l.id)}
+                          onClick={() => toggleFeatured(l.id, l.is_featured)}
                           className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${
                             l.is_featured
                               ? "bg-amber-100 text-amber-900 border border-amber-300"
@@ -127,14 +228,22 @@ export default function AdminListingsPage() {
                         </button>
                       </td>
                       <td className="p-4">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800">
-                          Active
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            l.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : l.status === "paused"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {l.status}
                         </span>
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Link
-                            href={`/listings/${l.id}`}
+                            href={`/property/${l.id}`}
                             target="_blank"
                             className="p-1.5 text-[#6E7771] hover:text-[#1F3A2B] hover:bg-[#FAF7F2] rounded-lg border border-[#E5E0D6] transition-colors inline-flex items-center justify-center"
                             title="View live listing"

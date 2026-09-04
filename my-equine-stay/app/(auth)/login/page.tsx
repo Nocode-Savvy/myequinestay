@@ -33,22 +33,18 @@ function LoginForm() {
       });
 
       if (authError) {
-        // Provide demo bypass for review if Supabase keys are default/local
-        if (email.includes("@")) {
-          router.push(redirectTo);
-          return;
-        }
         setError(authError.message);
         return;
       }
 
       if (data?.user) {
+        // Wait for the session to be fully established before navigating
+        await supabase.auth.getSession();
         router.push(redirectTo);
         router.refresh();
       }
-    } catch {
-      // Fallback for seamless offline preview
-      router.push(redirectTo);
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -152,11 +148,6 @@ function LoginForm() {
               Create an account
             </Link>
           </div>
-        </div>
-
-        {/* Demo Fast Login Helper */}
-        <div className="mt-4 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-[var(--color-sand)] text-center text-[11px] text-[var(--color-muted)]">
-          Demo accounts: <strong>owner@example.com</strong> or <strong>admin@example.com</strong>
         </div>
       </motion.div>
     </div>

@@ -1,13 +1,29 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, Upload, Trash2, Star, MapPin, Edit3, ShieldAlert } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Upload, Trash2, Star, MapPin, Edit3, ShieldAlert, GripVertical } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
 import { GoogleMapWrapper } from "@/components/ui/google-map";
+import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 /* ============================================================
    Step definitions matching screenshots exactly
@@ -131,13 +147,132 @@ function Chip({
 }
 
 /* ============================================================
+   Photo drag-and-drop with @dnd-kit
+   ============================================================ */
+interface PhotoItem {
+  id: string;
+  url: string;
+}
+
+function SortablePhoto({
+  photo,
+  index,
+  onRemove,
+}: {
+  photo: PhotoItem;
+  index: number;
+  onRemove: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: photo.id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  } as React.CSSProperties;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative group w-32 h-24 rounded-xl overflow-hidden border border-[#E5E0D6] touch-none"
+    >
+      <Image src={photo.url} alt={`Photo ${index + 1}`} fill className="object-cover" />
+      {/* Cover badge on first photo */}
+      {index === 0 && (
+        <span className="absolute top-1.5 left-1.5 bg-[#E1B534] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
+          <Star size={9} /> Cover
+        </span>
+      )}
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity bg-black/20"
+      >
+        <GripVertical size={20} className="text-white drop-shadow" />
+      </div>
+      {/* Delete button */}
+      <button
+        type="button"
+        onClick={() => onRemove(photo.id)}
+        className="absolute top-1.5 right-1.5 size-6 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
+      >
+        <Trash2 size={12} />
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   Google Places Autocomplete Input
+   Uses useMapsLibrary("places") from @vis.gl/react-google-maps.
+   Must be rendered inside an <APIProvider>.
+   Falls back to plain text input if the Maps API key is absent.
+   ============================================================ */
+function PlacesAutocompleteInput({
+  value,
+  onChange,
+  onPlaceSelect,
+  placeholder = "NW 80th Ave, Ocala, FL 34482",
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onPlaceSelect?: (place: google.maps.places.PlaceResult) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const placesLib = useMapsLibrary("places");
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  useEffect(() => {
+    if (!placesLib || !inputRef.current) return;
+    if (autocompleteRef.current) return; // already initialized
+
+    autocompleteRef.current = new placesLib.Autocomplete(inputRef.current, {
+      types: ["address"],
+      componentRestrictions: { country: "us" },
+      fields: ["address_components", "formatted_address", "geometry"],
+    });
+
+    autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current!.getPlace();
+      if (place.formatted_address) {
+        onChange(place.formatted_address);
+      }
+      if (onPlaceSelect) onPlaceSelect(place);
+    });
+  }, [placesLib, onChange, onPlaceSelect]);
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={className ?? "w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D6] bg-white text-sm text-[#1B221E] focus:outline-none focus:border-[#E1B534]"}
+      autoComplete="off"
+    />
+  );
+}
+
+/* ============================================================
    Main Page
    ============================================================ */
+const MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
 export default function NewListingWizardPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <WizardForm />
-    </Suspense>
+    <APIProvider apiKey={MAPS_API_KEY} libraries={["places"]}>
+      <Suspense fallback={<div>Loading...</div>}>
+        <WizardForm />
+      </Suspense>
+    </APIProvider>
   );
 }
 
@@ -152,6 +287,11 @@ function WizardForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+
+  // DnD sensors for photo reorder
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   /* --- Step 1: Plan --- */
   const [plan, setPlan] = useState<"premium" | "standard">("premium");
@@ -188,7 +328,7 @@ function WizardForm() {
   const [horseDescription, setHorseDescription] = useState("");
 
   /* --- Step 6: Photos --- */
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
   /* --- Step 7: Pricing --- */
   const [pricePerNight, setPricePerNight] = useState(80);
@@ -255,7 +395,7 @@ function WizardForm() {
           .eq("id", editId!)
           .single()) as any;
 
-        const item: any = dbItem || (SAMPLE_LISTINGS as any[]).find((l: any) => l.id === editId);
+        const item: any = dbItem;
         if (item) {
           if (item.title) setTitle(item.title);
           if (item.property_type) setPropertyType(item.property_type);
@@ -282,7 +422,7 @@ function WizardForm() {
           if (item.contact_phone) setContactPhone(item.contact_phone);
           if (item.plan) setPlan(item.plan === "standard" ? "standard" : "premium");
           if (item.listing_photos?.length) {
-            setPhotos(item.listing_photos.map((p: any) => p.url));
+            setPhotos(item.listing_photos.map((p: any) => ({ id: p.id || p.url, url: p.url })));
           }
           // In edit mode, jump directly to step 2 (Property Details)
           setCurrentStep(2);
@@ -316,7 +456,9 @@ function WizardForm() {
         if (d.horsesCapacity != null) setHorsesCapacity(d.horsesCapacity);
         if (d.pricePerNight != null) setPricePerNight(d.pricePerNight);
         if (d.pricePerWeek != null) setPricePerWeek(d.pricePerWeek);
-        if (d.photos) setPhotos(d.photos);
+        if (d.photos) setPhotos((d.photos as any[]).map((p: any) =>
+          typeof p === "string" ? { id: p, url: p } : p
+        ));
         if (d.contactName) setContactName(d.contactName);
         if (d.contactEmail) setContactEmail(d.contactEmail);
         if (d.contactPhone) setContactPhone(d.contactPhone);
@@ -335,7 +477,7 @@ function WizardForm() {
         propertyType, title, address, city, zipCode, bedrooms, bathrooms,
         maxGuests, acreage, amenities, stalls, barns, horsesCapacity,
         pricePerNight, pricePerWeek, pricePerMonth, minimumNights,
-        photos, contactName, contactEmail, contactPhone, step: currentStep,
+        photos: photos.map((p) => p.url), contactName, contactEmail, contactPhone, step: currentStep,
       }));
     } catch { /* ignore */ }
   }, [
@@ -355,16 +497,27 @@ function WizardForm() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    const newPhotos: string[] = [];
+    const newPhotos: PhotoItem[] = [];
     files.slice(0, 20 - photos.length).forEach((file) => {
       const url = URL.createObjectURL(file);
-      newPhotos.push(url);
+      newPhotos.push({ id: crypto.randomUUID(), url });
     });
     setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
-  const removePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  const removePhoto = (id: string) => {
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setPhotos((prev) => {
+        const oldIndex = prev.findIndex((p) => p.id === active.id);
+        const newIndex = prev.findIndex((p) => p.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
   };
 
   const handlePublish = async () => {
@@ -429,7 +582,7 @@ function WizardForm() {
             horse_facilities: equestrianFacilities, facility_notes: facilityNotes,
             horse_description: horseDescription, price_per_night: pricePerNight,
             price_per_week: pricePerWeek, price_per_month: pricePerMonth,
-            minimum_stay: minimumNights, photos, contact_name: contactName,
+            minimum_stay: minimumNights, photos: photos.map((p) => p.url), contact_name: contactName,
             contact_email: contactEmail, contact_phone: contactPhone,
           },
         }),
@@ -581,69 +734,103 @@ function WizardForm() {
             {/* ═══ STEP 1: Choose a listing plan ═══ */}
             {currentStep === 1 && (
               <div className="space-y-5">
-                <div>
-                  <h2 className="font-serif text-2xl text-[#1B221E]">Choose a listing plan</h2>
-                  <p className="text-sm text-[#6E7771] mt-1">
-                    Both plans run for 3 months. Your listing stays in Draft until payment completes, then goes live automatically.
-                  </p>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {/* Premium */}
-                  <button
-                    type="button"
-                    onClick={() => setPlan("premium")}
-                    className={`relative text-left p-5 rounded-2xl border-2 transition-all ${
-                      plan === "premium"
-                        ? "border-[#E1B534] bg-[#FFFBF0]"
-                        : "border-[#E5E0D6] bg-white hover:border-[#E1B534]/50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <span className="font-serif text-xl text-[#1B221E]">Premium</span>
-                      <span className="bg-[#1F3A2B] text-white text-[10px] font-semibold px-2.5 py-1 rounded-full tracking-wide">
-                        ✦ BEST VALUE
-                      </span>
+                {isEditing ? (
+                  // In edit mode: show current plan summary, don't allow re-selection
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="font-serif text-2xl text-[#1B221E]">Your current listing plan</h2>
+                      <p className="text-sm text-[#6E7771] mt-1">
+                        Your plan is already active. You cannot change your plan while editing an existing listing.
+                      </p>
                     </div>
-                    <p className="font-serif text-3xl text-[#1B221E]">
-                      $29.99<span className="text-sm font-sans font-normal text-[#6E7771]"> / month</span>
+                    <div className="rounded-2xl border-2 border-[#E1B534] bg-[#FFFBF0] p-5">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="font-serif text-xl text-[#1B221E]">
+                          {plan === "premium" ? "Premium" : "Standard"}
+                        </span>
+                        <span className="bg-[#1F3A2B] text-white text-[10px] font-semibold px-2.5 py-1 rounded-full tracking-wide">
+                          CURRENT PLAN
+                        </span>
+                      </div>
+                      <p className="font-serif text-3xl text-[#1B221E]">
+                        {plan === "premium" ? "$29.99" : "$19.99"}<span className="text-sm font-sans font-normal text-[#6E7771]">/month</span>
+                      </p>
+                      <p className="text-xs text-[#6E7771] mt-1">
+                        {plan === "premium" ? "Billed every 3 months: $89.97" : "Billed every 3 months: $59.97"}
+                      </p>
+                    </div>
+                    <p className="text-xs text-[#6E7771]">
+                      To change your plan, contact support or manage your subscription from your account settings.
                     </p>
-                    <p className="text-xs text-[#6E7771] mt-1">Billed every 3 months: $89.97</p>
-                    <p className="text-[11px] text-[#6E7771] mt-0.5">You are charged $89.97 every 3 months — not monthly.</p>
-                    <ul className="mt-4 space-y-1.5">
-                      {["Everything in Standard", "Featured on homepage", "Priority in search results", "Premium badge on listing"].map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-xs text-[#1B221E]">
-                          <Check size={13} className="text-[#E1B534] shrink-0" /> {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </button>
+                  </div>
+                ) : (
+                  // New listing: full plan selection
+                  <div className="space-y-5">
+                    <div>
+                      <h2 className="font-serif text-2xl text-[#1B221E]">Choose a listing plan</h2>
+                      <p className="text-sm text-[#6E7771] mt-1">
+                        Both plans run for 3 months. Your listing stays in Draft until payment completes, then goes live automatically.
+                      </p>
+                    </div>
 
-                  {/* Standard */}
-                  <button
-                    type="button"
-                    onClick={() => setPlan("standard")}
-                    className={`relative text-left p-5 rounded-2xl border-2 transition-all ${
-                      plan === "standard"
-                        ? "border-[#E1B534] bg-[#FFFBF0]"
-                        : "border-[#E5E0D6] bg-white hover:border-[#E1B534]/50"
-                    }`}
-                  >
-                    <span className="font-serif text-xl text-[#1B221E]">Standard</span>
-                    <p className="font-serif text-3xl text-[#1B221E] mt-3">
-                      $19.99<span className="text-sm font-sans font-normal text-[#6E7771]"> / month</span>
-                    </p>
-                    <p className="text-xs text-[#6E7771] mt-1">Billed every 3 months: $59.97</p>
-                    <p className="text-[11px] text-[#6E7771] mt-0.5">You are charged $59.97 every 3 months — not monthly.</p>
-                    <ul className="mt-4 space-y-1.5">
-                      {["3-month listing", "Full property page", "Direct guest inquiries", "Search & filter visibility"].map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-xs text-[#1B221E]">
-                          <Check size={13} className="text-[#E1B534] shrink-0" /> {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </button>
-                </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {/* Premium */}
+                      <button
+                        type="button"
+                        onClick={() => setPlan("premium")}
+                        className={`relative text-left p-5 rounded-2xl border-2 transition-all ${
+                          plan === "premium"
+                            ? "border-[#E1B534] bg-[#FFFBF0]"
+                            : "border-[#E5E0D6] bg-white hover:border-[#E1B534]/50"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="font-serif text-xl text-[#1B221E]">Premium</span>
+                          <span className="bg-[#1F3A2B] text-white text-[10px] font-semibold px-2.5 py-1 rounded-full tracking-wide">
+                            ✦ BEST VALUE
+                          </span>
+                        </div>
+                        <p className="font-serif text-3xl text-[#1B221E]">
+                          $29.99<span className="text-sm font-sans font-normal text-[#6E7771]"> / month</span>
+                        </p>
+                        <p className="text-xs text-[#6E7771] mt-1">Billed every 3 months: $89.97</p>
+                        <p className="text-[11px] text-[#6E7771] mt-0.5">You are charged $89.97 every 3 months — not monthly.</p>
+                        <ul className="mt-4 space-y-1.5">
+                          {["Everything in Standard", "Featured on homepage", "Priority in search results", "Premium badge on listing"].map((f) => (
+                            <li key={f} className="flex items-center gap-2 text-xs text-[#1B221E]">
+                              <Check size={13} className="text-[#E1B534] shrink-0" /> {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </button>
+
+                      {/* Standard */}
+                      <button
+                        type="button"
+                        onClick={() => setPlan("standard")}
+                        className={`relative text-left p-5 rounded-2xl border-2 transition-all ${
+                          plan === "standard"
+                            ? "border-[#E1B534] bg-[#FFFBF0]"
+                            : "border-[#E5E0D6] bg-white hover:border-[#E1B534]/50"
+                        }`}
+                      >
+                        <span className="font-serif text-xl text-[#1B221E]">Standard</span>
+                        <p className="font-serif text-3xl text-[#1B221E] mt-3">
+                          $19.99<span className="text-sm font-sans font-normal text-[#6E7771]"> / month</span>
+                        </p>
+                        <p className="text-xs text-[#6E7771] mt-1">Billed every 3 months: $59.97</p>
+                        <p className="text-[11px] text-[#6E7771] mt-0.5">You are charged $59.97 every 3 months — not monthly.</p>
+                        <ul className="mt-4 space-y-1.5">
+                          {["3-month listing", "Full property page", "Direct guest inquiries", "Search & filter visibility"].map((f) => (
+                            <li key={f} className="flex items-center gap-2 text-xs text-[#1B221E]">
+                              <Check size={13} className="text-[#E1B534] shrink-0" /> {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -691,13 +878,34 @@ function WizardForm() {
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#6E7771] mb-1.5">
                     ADDRESS
                   </label>
-                  <input
-                    type="text"
-                    placeholder="NW 80th Ave, Ocala, FL 34482"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D6] bg-white text-sm text-[#1B221E] focus:outline-none focus:border-[#E1B534]"
-                  />
+                  {MAPS_API_KEY ? (
+                    <PlacesAutocompleteInput
+                      value={address}
+                      onChange={setAddress}
+                      onPlaceSelect={(place) => {
+                        // Auto-fill city, zip, and lat/long from the selected place
+                        const components = place.address_components || [];
+                        const getComponent = (type: string) =>
+                          components.find((c) => c.types.includes(type))?.long_name || "";
+                        const cityVal = getComponent("locality") || getComponent("sublocality") || getComponent("administrative_area_level_2");
+                        const zipVal = getComponent("postal_code");
+                        if (cityVal) setCity(cityVal);
+                        if (zipVal) setZipCode(zipVal);
+                        if (place.geometry?.location) {
+                          setLatitude(place.geometry.location.lat());
+                          setLongitude(place.geometry.location.lng());
+                        }
+                      }}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="NW 80th Ave, Ocala, FL 34482"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D6] bg-white text-sm text-[#1B221E] focus:outline-none focus:border-[#E1B534]"
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -969,31 +1177,30 @@ function WizardForm() {
                   onChange={handlePhotoUpload}
                 />
 
-                {/* Photo grid with cover star */}
+                {/* Photo grid with DnD reorder */}
                 {photos.length > 0 && (
                   <>
                     <p className="text-xs text-[#6E7771]">
-                      Press and hold a photo, then drag to reorder. The first photo is your cover and appears in search results and previews.
+                      Drag photos to reorder. The first photo is your cover image shown in search results.
                     </p>
-                    <div className="flex flex-wrap gap-3">
-                      {photos.map((photo, i) => (
-                        <div key={i} className="relative group w-32 h-24 rounded-xl overflow-hidden border border-[#E5E0D6]">
-                          <Image src={photo} alt={`Photo ${i + 1}`} fill className="object-cover" />
-                          {i === 0 && (
-                            <span className="absolute top-1.5 left-1.5 bg-[#E1B534] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Star size={9} /> Cover
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removePhoto(i)}
-                            className="absolute top-1.5 right-1.5 size-6 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
+                        <div className="flex flex-wrap gap-3">
+                          {photos.map((photo, i) => (
+                            <SortablePhoto
+                              key={photo.id}
+                              photo={photo}
+                              index={i}
+                              onRemove={removePhoto}
+                            />
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </SortableContext>
+                    </DndContext>
                   </>
                 )}
               </div>
@@ -1017,31 +1224,41 @@ function WizardForm() {
                 {/* Rates */}
                 <div className="rounded-xl border border-[#E5E0D6] p-4 space-y-5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6E7771]">RATES</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                     {[
                       { label: "PER NIGHT ($)", value: pricePerNight, onChange: setPricePerNight, hint: "Charged for a single night's stay." },
                       { label: "PER WEEK ($)", value: pricePerWeek, onChange: setPricePerWeek, hint: "Total for a 7-night stay (optional)." },
                       { label: "PER MONTH ($)", value: pricePerMonth, onChange: setPricePerMonth, hint: "Total for a 30-night stay (optional)." },
                     ].map(({ label, value, onChange, hint }) => (
-                      <div key={label}>
+                      <div key={label} className="p-3 sm:p-0 rounded-xl bg-[#FAF7F2] sm:bg-transparent border sm:border-0 border-[#E5E0D6]/60">
                         <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#6E7771] mb-1.5">
                           {label}
                         </label>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <span className="text-sm text-[#6E7771]">$</span>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-sm font-semibold text-[#6E7771]">$</span>
                           <input
                             type="number"
                             min={0}
                             value={value}
                             onChange={(e) => onChange(Number(e.target.value))}
-                            className="w-full px-2 py-2 border border-[#E5E0D6] rounded-lg text-sm text-[#1B221E] bg-white focus:outline-none focus:border-[#E1B534]"
+                            className="w-full sm:w-28 px-3 py-2 border border-[#E5E0D6] rounded-lg text-sm font-medium text-[#1B221E] bg-white focus:outline-none focus:border-[#E1B534]"
                           />
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <button type="button" onClick={() => onChange(Math.max(0, value - 5))}
-                            className="size-7 rounded-full border border-[#E5E0D6] flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none">−</button>
-                          <button type="button" onClick={() => onChange(value + 5)}
-                            className="size-7 rounded-full border border-[#E5E0D6] flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none">+</button>
+                          <button
+                            type="button"
+                            onClick={() => onChange(Math.max(0, value - 5))}
+                            className="size-8 rounded-full border border-[#E5E0D6] bg-white flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none transition-colors"
+                          >
+                            −
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onChange(value + 5)}
+                            className="size-8 rounded-full border border-[#E5E0D6] bg-white flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none transition-colors"
+                          >
+                            +
+                          </button>
                         </div>
                         <p className="text-[10px] text-[#6E7771] mt-1.5 leading-snug">{hint}</p>
                       </div>
@@ -1056,20 +1273,32 @@ function WizardForm() {
                     <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#6E7771] mb-1.5">
                       MINIMUM NIGHTS
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={minimumNights}
-                      onChange={(e) => setMinimumNights(Number(e.target.value))}
-                      className="w-24 px-3 py-2 border border-[#E5E0D6] rounded-lg text-sm text-[#1B221E] bg-white focus:outline-none focus:border-[#E1B534]"
-                    />
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <button type="button" onClick={() => setMinimumNights(Math.max(1, minimumNights - 1))}
-                        className="size-7 rounded-full border border-[#E5E0D6] flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none">−</button>
-                      <button type="button" onClick={() => setMinimumNights(minimumNights + 1)}
-                        className="size-7 rounded-full border border-[#E5E0D6] flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none">+</button>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        value={minimumNights}
+                        onChange={(e) => setMinimumNights(Number(e.target.value))}
+                        className="w-24 px-3 py-2 border border-[#E5E0D6] rounded-lg text-sm font-medium text-[#1B221E] bg-white focus:outline-none focus:border-[#E1B534]"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setMinimumNights(Math.max(1, minimumNights - 1))}
+                          className="size-8 rounded-full border border-[#E5E0D6] bg-white flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none transition-colors"
+                        >
+                          −
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMinimumNights(minimumNights + 1)}
+                          className="size-8 rounded-full border border-[#E5E0D6] bg-white flex items-center justify-center text-[#1B221E] hover:bg-[#FAF7F2] text-lg leading-none transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-[#6E7771] mt-1.5">Guests will need to book at least this many consecutive nights.</p>
+                    <p className="text-[10px] text-[#6E7771] mt-2">Guests will need to book at least this many consecutive nights.</p>
                   </div>
                 </div>
               </div>
@@ -1150,7 +1379,7 @@ function WizardForm() {
                 <div className="rounded-2xl border border-[#E5E0D6] overflow-hidden">
                   {photos.length > 0 ? (
                     <div className="relative h-40">
-                      <Image src={photos[0]} alt="Cover" fill className="object-cover" />
+                      <Image src={photos[0].url} alt="Cover" fill className="object-cover" />
                     </div>
                   ) : (
                     <div className="h-40 bg-[#E5E0D6]/40 flex items-center justify-center text-xs text-[#6E7771]">

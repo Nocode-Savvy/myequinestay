@@ -70,68 +70,10 @@ const SCOPE_CONFIG: Record<
   },
 };
 
-const SAMPLE_USERS: AdminUser[] = [
-  {
-    id: "u0",
-    full_name: "Super Admin (You)",
-    email: "buildwithtimi8@gmail.com",
-    role: "admin",
-    admin_scope: "super_admin",
-    is_suspended: false,
-    listings_count: 0,
-    created_at: "2026-01-01",
-  },
-  {
-    id: "u1",
-    full_name: "Sarah Mitchell",
-    email: "sarah@mitchellfarm.com",
-    role: "owner",
-    is_suspended: false,
-    listings_count: 2,
-    created_at: "2026-01-15",
-  },
-  {
-    id: "u2",
-    full_name: "James & Patricia Owens",
-    email: "info@goldenoakmanor.com",
-    role: "owner",
-    is_suspended: false,
-    listings_count: 1,
-    created_at: "2026-02-01",
-  },
-  {
-    id: "u4",
-    full_name: "Emily Watson",
-    email: "emily.w@equestrian.org",
-    role: "guest",
-    is_suspended: false,
-    listings_count: 0,
-    created_at: "2026-03-10",
-  },
-  {
-    id: "u5",
-    full_name: "Mark Houser",
-    email: "liveoakrvpad@gmail.com",
-    role: "owner",
-    is_suspended: false,
-    listings_count: 1,
-    created_at: "2026-03-14",
-  },
-  {
-    id: "u6",
-    full_name: "Spam Bot",
-    email: "spammer@botmail.xyz",
-    role: "guest",
-    is_suspended: true,
-    listings_count: 0,
-    created_at: "2026-04-02",
-  },
-];
-
 export default function AdminUsersPage() {
   const supabase = createClient();
 
-  const [users, setUsers] = useState<AdminUser[]>(SAMPLE_USERS);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -156,11 +98,22 @@ export default function AdminUsersPage() {
         .select("id, full_name, email, role, is_suspended, created_at")
         .order("created_at", { ascending: false });
 
-      if (error || !profiles || profiles.length === 0) {
-        // Fall back to sample users for demo/review
-        setUsers(SAMPLE_USERS);
+      if (error || !profiles) {
+        setUsers([]);
         return;
       }
+
+      // Also get listings count per owner from database
+      const { data: allListings } = (await (supabase
+        .from("listings") as any)
+        .select("id, owner_id")) as any;
+
+      const listingCountMap: Record<string, number> = {};
+      (allListings || []).forEach((l: any) => {
+        if (l.owner_id) {
+          listingCountMap[l.owner_id] = (listingCountMap[l.owner_id] || 0) + 1;
+        }
+      });
 
       // Format profiles
       const formattedUsers: AdminUser[] = profiles.map((p: any) => ({
@@ -170,22 +123,13 @@ export default function AdminUsersPage() {
         role: p.role || "guest",
         admin_scope: p.role === "admin" ? "super_admin" : undefined,
         is_suspended: !!p.is_suspended,
-        listings_count: 0,
+        listings_count: listingCountMap[p.id] || 0,
         created_at: p.created_at ? p.created_at.split("T")[0] : "Recently",
       }));
 
-      // Merge with sample users if fewer than 3 real users
-      if (formattedUsers.length < 3) {
-        const merged = [
-          ...formattedUsers,
-          ...SAMPLE_USERS.filter((s) => !formattedUsers.some((f) => f.email === s.email)),
-        ];
-        setUsers(merged);
-      } else {
-        setUsers(formattedUsers);
-      }
+      setUsers(formattedUsers);
     } catch {
-      setUsers(SAMPLE_USERS);
+      setUsers([]);
     } finally {
       setLoading(false);
     }

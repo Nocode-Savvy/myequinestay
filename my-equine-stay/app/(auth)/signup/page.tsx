@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
@@ -47,15 +47,15 @@ function SignUpForm() {
         options: { data: { full_name: fullName, role } },
       });
       if (authError) {
-        router.push("/dashboard");
+        setError(authError.message);
         return;
       }
       if (data.user) {
-        router.push("/dashboard");
-        router.refresh();
+        // Navigate to the email confirmation waiting page
+        router.push(`/confirm-email?email=${encodeURIComponent(email)}`);
       }
-    } catch {
-      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }

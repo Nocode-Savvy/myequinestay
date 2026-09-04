@@ -8,6 +8,7 @@ import { AskAiModal } from "@/components/ui/ask-ai-modal";
 import { ReportProblemModal } from "@/components/ui/report-problem-modal";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { MessageCircle, CircleAlert } from "lucide-react";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <LanguageProvider>
         <main className="flex-1 min-h-screen">{children}</main>
+        <ScrollToTop className="bottom-6 right-6" />
       </LanguageProvider>
     );
   }
@@ -30,6 +32,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Navbar />
       <main className="flex-1 w-full max-w-full min-w-0">{children}</main>
       <Footer />
+
+      {/* Floating: Scroll To Top button */}
+      <ScrollToTop className="bottom-20 right-5 sm:bottom-20 sm:right-6" />
 
       {/* Floating: Ask AI trigger button */}
       <button
