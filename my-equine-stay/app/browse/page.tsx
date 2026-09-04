@@ -27,6 +27,8 @@ import {
 import type { ListingWithPhotos } from "@/types/database";
 import { useLanguage } from "@/lib/i18n/context";
 import { GoogleMapWrapper } from "@/components/ui/google-map";
+import { getLocalizedListing } from "@/lib/i18n/listing-localization";
+import { propertyTypeLabel } from "@/lib/utils";
 
 /* ============================================================
    useFavorites — manages favorite state + Supabase sync
@@ -202,6 +204,7 @@ function Pagination({
 function BrowseContent() {
   const searchParams = useSearchParams();
   const supabase = createClient();
+  const { t, language } = useLanguage();
 
   const [listings, setListings] = useState<ListingWithPhotos[]>(SAMPLE_LISTINGS);
   const [loading, setLoading] = useState(true);
@@ -216,7 +219,6 @@ function BrowseContent() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertEmail, setAlertEmail] = useState("");
   const [alertSubmitted, setAlertSubmitted] = useState(false);
-  const { t } = useLanguage();
   const { favoriteIds, toggle: toggleFavorite } = useFavorites();
 
   const fetchListings = useCallback(async () => {
@@ -457,6 +459,7 @@ function BrowseContent() {
                 const coverPhoto =
                   listing.listing_photos?.find((p) => p.is_cover)?.url ??
                   listing.listing_photos?.[0]?.url;
+                const loc = getLocalizedListing(listing, language);
                 const displayPrice = listing.price_per_night || 0;
                 const period = listing.price_per_night ? "night" : "week";
 
@@ -475,7 +478,7 @@ function BrowseContent() {
                         {coverPhoto ? (
                           <Image
                             src={coverPhoto}
-                            alt={listing.title}
+                            alt={loc.title || listing.title}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                             sizes="150px"
@@ -492,19 +495,19 @@ function BrowseContent() {
                         {(listing.is_featured || listing.plan === "premium") && (
                           <span className="inline-flex items-center gap-1 bg-[#E1B534] text-white px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase mb-1">
                             <Star className="size-2 fill-white" />
-                            Featured
+                            {t.propertyDetail?.featuredStay || "Featured"}
                           </span>
                         )}
                         <h3 className="font-serif text-base text-[#1B221E] font-medium truncate mt-0.5">
-                          {listing.title}
+                          {loc.title || listing.title}
                         </h3>
                         <p className="text-xs text-[#6E7771] mt-1">
-                          {listing.city} · {listing.stalls} stalls · {listing.bedrooms ?? 2} bd
+                          {listing.city} · {listing.stalls} {t.listings.stalls} · {listing.bedrooms ?? 2} {t.listings.bedrooms}
                         </p>
                         <p className="font-serif text-base text-[#1F3A2B] mt-1 leading-none">
                           ${displayPrice}{" "}
                           <span className="text-[10px] uppercase text-[#6E7771] font-sans font-normal">
-                            / {period}
+                            / {period === "night" ? t.listings.perNight : t.listings.perWeek}
                           </span>
                         </p>
                       </div>
@@ -523,10 +526,13 @@ function BrowseContent() {
                   listing.listing_photos?.find((p) => p.is_cover)?.url ??
                   listing.listing_photos?.[0]?.url;
 
+                const loc = getLocalizedListing(listing, language);
                 const displayPrice = listing.price_per_night || 0;
                 const period = listing.price_per_night ? "night" : "week";
                 const cat =
-                  categoryLabels[listing.property_type] ?? "Equestrian Farm";
+                  propertyTypeLabel(listing.property_type, language) ||
+                  categoryLabels[listing.property_type] ||
+                  "Equestrian Farm";
                 const isFeatured = listing.is_featured || listing.plan === "premium";
 
                 return (
@@ -540,7 +546,7 @@ function BrowseContent() {
                       {coverPhoto ? (
                         <Image
                           src={coverPhoto}
-                          alt={listing.title}
+                          alt={loc.title || listing.title}
                           fill
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -555,7 +561,7 @@ function BrowseContent() {
                       {isFeatured ? (
                         <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#E1B534] text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm">
                           <Star className="size-2.5 fill-white" />
-                          Featured
+                          {t.propertyDetail?.featuredStay || "Featured"}
                         </span>
                       ) : (
                         <span className="absolute top-3 left-3 bg-[#FAF7F2]/95 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider text-[#1F3A2B] uppercase ring-1 ring-black/5">
@@ -583,16 +589,16 @@ function BrowseContent() {
                     {/* Full details visible at a glance */}
                     <div className="flex justify-between items-start gap-3 w-full">
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] uppercase tracking-widest text-[#E1B534] mb-1 font-semibold">
+                        <p className="text-[10px] uppercase tracking-widest text-[#E1B534] mb-1 font-semibold truncate">
                           {cat}
                         </p>
                         <h3 className="font-medium text-[#1B221E] text-base leading-snug truncate">
-                          {listing.title}
+                          {loc.title || listing.title}
                         </h3>
                         <p className="text-xs sm:text-sm text-[#6E7771] mt-0.5 truncate">
                           {listing.city}
-                          {listing.stalls > 0 ? ` · ${listing.stalls} stalls` : ""}
-                          {listing.bedrooms > 0 ? ` · ${listing.bedrooms} bd` : ""}
+                          {listing.stalls > 0 ? ` · ${listing.stalls} ${t.listings.stalls}` : ""}
+                          {listing.bedrooms > 0 ? ` · ${listing.bedrooms} ${t.listings.bedrooms}` : ""}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
@@ -600,7 +606,7 @@ function BrowseContent() {
                           ${displayPrice}
                         </p>
                         <p className="text-[10px] uppercase text-[#6E7771] tracking-widest mt-1">
-                          / {period}
+                          / {period === "night" ? t.listings.perNight : t.listings.perWeek}
                         </p>
                       </div>
                     </div>

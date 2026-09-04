@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -11,8 +11,10 @@ import {
   Flag,
   Sliders,
   ArrowLeft,
+  LogOut,
 } from "lucide-react";
 import { siteConfig } from "@/lib/config";
+import { createClient } from "@/lib/supabase/client";
 
 const adminNav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -25,6 +27,19 @@ const adminNav = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      router.push("/");
+      router.refresh();
+    } catch {
+      // ignore
+    }
+  };
 
   return (
     <aside className="w-full md:w-64 bg-[#1F3A2B] text-[#FAF7F2] flex flex-col justify-between p-5 md:min-h-screen flex-shrink-0 border-r border-[#2D5440] shadow-md">
@@ -88,6 +103,13 @@ export function AdminSidebar() {
         >
           <ArrowLeft size={14} className="text-[#E1B534]" /> Exit to Dashboard
         </Link>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-300 hover:text-white hover:bg-red-900/40 transition-colors text-left"
+        >
+          <LogOut size={14} className="text-red-400" /> Sign Out
+        </button>
       </div>
     </aside>
   );

@@ -16,6 +16,7 @@ import {
   Check,
   User,
   ChevronDown,
+  LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n/context";
@@ -185,6 +186,18 @@ export function Navbar() {
     setSearchOpen(false);
   };
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      setProfile(null);
+      router.push("/");
+      router.refresh();
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <>
       <nav className="sticky top-0 z-40 bg-[#FAF7F2]/85 backdrop-blur-md border-b border-[#E5E0D6]/70">
@@ -280,13 +293,25 @@ export function Navbar() {
             {/* Auth / Account Buttons */}
             <div className="flex items-center gap-2">
               {profile ? (
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1F3A2B] text-white px-4 py-1.5 text-xs font-medium tracking-wide hover:opacity-90 transition-opacity"
-                >
-                  <User className="size-3.5" />
-                  {profile.full_name ? profile.full_name.split(" ")[0] : t.nav.myAccount}
-                </Link>
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#1F3A2B] text-white px-3.5 py-1.5 text-xs font-medium tracking-wide hover:bg-[#2D5440] transition-colors shadow-xs"
+                  >
+                    <User className="size-3.5" />
+                    <span>{profile.full_name ? profile.full_name.split(" ")[0] : t.nav.myAccount}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E0D6] bg-white px-2.5 py-1.5 text-xs font-medium text-[#6E7771] hover:text-[#C53030] hover:border-red-200 hover:bg-red-50/60 transition-colors shadow-xs"
+                    title={t.nav.signOut}
+                    aria-label={t.nav.signOut}
+                  >
+                    <LogOut className="size-3.5 text-[#6E7771] hover:text-[#C53030]" />
+                    <span className="hidden xl:inline">{t.nav.signOut}</span>
+                  </button>
+                </div>
               ) : (
                 <>
                   <Link
@@ -437,14 +462,30 @@ export function Navbar() {
                 {t.nav.contact}
               </Link>
 
-              <div className="pt-3 flex gap-2">
+              <div className="pt-3 flex flex-col gap-2">
                 {profile ? (
-                  <Link
-                    href="/dashboard"
-                    className="flex-1 text-center py-3 rounded-full bg-[#1F3A2B] text-white text-sm font-medium"
-                  >
-                    {t.nav.myAccount}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex-1 flex items-center justify-center gap-2 text-center py-3 rounded-xl bg-[#1F3A2B] text-white text-sm font-medium hover:bg-[#2D5440] transition-colors"
+                    >
+                      <User className="size-4" />
+                      <span>{profile.full_name ? profile.full_name.split(" ")[0] : t.nav.myAccount}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setMobileOpen(false);
+                        await handleSignOut();
+                      }}
+                      className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-medium hover:bg-red-100 transition-colors"
+                      aria-label={t.nav.signOut}
+                    >
+                      <LogOut className="size-4" />
+                      <span>{t.nav.signOut}</span>
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <Link

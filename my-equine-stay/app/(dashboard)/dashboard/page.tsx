@@ -24,6 +24,7 @@ import {
   Sparkles,
   ArrowRight,
   ExternalLink,
+  LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n/context";
@@ -377,6 +378,17 @@ function DashboardContent() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      router.push("/");
+      router.refresh();
+    } catch {
+      // ignore
+    }
+  };
+
   const handleDeactivateAccount = async () => {
     setDeactivating(true);
     try {
@@ -475,12 +487,22 @@ function DashboardContent() {
                 </p>
               </div>
 
-              <Link
-                href="/listings"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#1F3A2B] text-white text-sm font-medium hover:opacity-95 shadow-sm transition-opacity shrink-0"
-              >
-                Browse Stays
-              </Link>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full border border-[#E5E0D6] bg-white text-[#6E7771] text-xs font-semibold hover:text-[#C53030] hover:border-red-200 hover:bg-red-50/50 transition-colors shadow-xs"
+                >
+                  <LogOut size={15} />
+                  <span>Sign out</span>
+                </button>
+                <Link
+                  href="/listings"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#1F3A2B] text-white text-sm font-medium hover:opacity-95 shadow-sm transition-opacity shrink-0"
+                >
+                  Browse Stays
+                </Link>
+              </div>
             </div>
 
             {/* Upgrade to Owner Prompt Banner */}
@@ -798,13 +820,22 @@ function DashboardContent() {
                   <p className="text-xs text-[#6E7771] leading-relaxed">
                     Signing out or deactivating will clear your saved session.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setDeactivateModalOpen(true)}
-                    className="px-5 py-2.5 rounded-full border border-red-300 text-red-700 text-xs font-semibold hover:bg-red-50 transition-colors"
-                  >
-                    Deactivate account
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="px-5 py-2.5 rounded-full border border-[#E5E0D6] bg-white text-[#1B221E] text-xs font-semibold hover:border-[#1F3A2B] hover:bg-[#FAF7F2] transition-colors"
+                    >
+                      Sign out
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeactivateModalOpen(true)}
+                      className="px-5 py-2.5 rounded-full border border-red-300 text-red-700 text-xs font-semibold hover:bg-red-50 transition-colors"
+                    >
+                      Deactivate account
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -827,13 +858,23 @@ function DashboardContent() {
                 </h1>
               </div>
 
-              <Link
-                href="/list-property"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#E1B534] text-white text-sm font-medium hover:opacity-90 shadow-sm transition-opacity shrink-0"
-              >
-                <Plus size={16} />
-                {t.dashboard.addProperty}
-              </Link>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full border border-[#E5E0D6] bg-white text-[#6E7771] text-xs font-semibold hover:text-[#C53030] hover:border-red-200 hover:bg-red-50/50 transition-colors shadow-xs"
+                >
+                  <LogOut size={15} />
+                  <span>Sign out</span>
+                </button>
+                <Link
+                  href="/list-property"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#E1B534] text-white text-sm font-medium hover:opacity-90 shadow-sm transition-opacity shrink-0"
+                >
+                  <Plus size={16} />
+                  {t.dashboard.addProperty}
+                </Link>
+              </div>
             </div>
 
             {/* 4 Stat Cards in a row */}
@@ -1184,13 +1225,22 @@ function DashboardContent() {
                   <p className="text-xs text-[#6E7771] leading-relaxed">
                     Deactivating your account will hide your active listings from search and sign you out of My Equine Stay.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setDeactivateModalOpen(true)}
-                    className="px-5 py-2.5 rounded-full border border-red-300 text-red-700 text-xs font-semibold hover:bg-red-50 transition-colors"
-                  >
-                    Deactivate account
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="px-5 py-2.5 rounded-full border border-[#E5E0D6] bg-white text-[#1B221E] text-xs font-semibold hover:border-[#1F3A2B] hover:bg-[#FAF7F2] transition-colors"
+                    >
+                      Sign out
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeactivateModalOpen(true)}
+                      className="px-5 py-2.5 rounded-full border border-red-300 text-red-700 text-xs font-semibold hover:bg-red-50 transition-colors"
+                    >
+                      Deactivate account
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

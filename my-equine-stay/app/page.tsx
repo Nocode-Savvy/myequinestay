@@ -21,6 +21,8 @@ import { createClient } from "@/lib/supabase/client";
 import { AuthModal } from "@/components/ui/auth-modal";
 import { useLanguage } from "@/lib/i18n/context";
 import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
+import { getLocalizedListing } from "@/lib/i18n/listing-localization";
+import { propertyTypeLabel } from "@/lib/utils";
 
 /* ============================================================
    Animation helpers
@@ -126,6 +128,11 @@ function ListingCard({
     equestrian_farm: "Equestrian Farm",
   };
 
+  const { t, language } = useLanguage();
+  const loc = getLocalizedListing(listing as any, language);
+  const localizedTitle = loc.title || listing.title;
+  const catLabel = propertyTypeLabel(listing.category, language) || categoryLabel[listing.category] || listing.category;
+
   return (
     <motion.div
       ref={ref}
@@ -144,7 +151,7 @@ function ListingCard({
           {listing.images[0] ? (
             <Image
               src={listing.images[0]}
-              alt={listing.title}
+              alt={localizedTitle}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               sizes="288px"
@@ -157,7 +164,7 @@ function ListingCard({
           {listing.isFeatured ? (
             <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#E1B534] text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm">
               <Star className="size-2.5 fill-white" />
-              Featured
+              {t.propertyDetail?.featuredStay || "Featured"}
             </span>
           ) : listing.milesToWec != null ? (
             <span className="absolute top-3 left-3 bg-[#FAF7F2]/95 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wider text-[#1F3A2B] uppercase ring-1 ring-black/5">
@@ -186,16 +193,16 @@ function ListingCard({
         {/* Card body */}
         <div className="flex justify-between items-start gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-widest text-[#E1B534] mb-1">
-              {categoryLabel[listing.category] ?? listing.category}
+            <p className="text-[10px] uppercase tracking-widest text-[#E1B534] mb-1 font-medium truncate">
+              {catLabel}
             </p>
             <h3 className="font-medium text-[#1B221E] truncate">
-              {listing.title}
+              {localizedTitle}
             </h3>
             <p className="text-sm text-[#6E7771] mt-0.5">
               {listing.neighborhood}
-              {listing.stalls > 0 ? ` · ${listing.stalls} stalls` : ""}
-              {listing.bedrooms ? ` · ${listing.bedrooms} bd` : ""}
+              {listing.stalls > 0 ? ` · ${listing.stalls} ${t.listings.stalls}` : ""}
+              {listing.bedrooms ? ` · ${listing.bedrooms} ${t.listings.bedrooms}` : ""}
             </p>
           </div>
           <div className="text-right shrink-0">
@@ -203,7 +210,7 @@ function ListingCard({
               ${price.amount}
             </p>
             <p className="text-[10px] uppercase text-[#6E7771] tracking-widest mt-1">
-              {price.period}
+              {price.period === "night" ? t.listings.perNight : t.listings.perWeek}
             </p>
           </div>
         </div>

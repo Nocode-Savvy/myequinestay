@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Heart,
@@ -14,8 +14,6 @@ import {
   ChevronRight,
   Shield,
   Send,
-  Calendar as CalendarIcon,
-  Phone,
   Mail,
   Home,
   CheckCircle2,
@@ -23,11 +21,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
-import { siteConfig } from "@/lib/config";
 import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
 import { createClient } from "@/lib/supabase/client";
 import type { ListingWithPhotos } from "@/types/database";
 import { propertyTypeLabel } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/context";
+import {
+  getLocalizedListing,
+  getLocalizedAmenityLabel,
+  getLocalizedFacilityLabel,
+  getLocalizedMonthName,
+} from "@/lib/i18n/listing-localization";
 
 export default function ListingDetailPage({
   params,
@@ -37,6 +41,7 @@ export default function ListingDetailPage({
   const resolvedParams = use(params);
   const listingId = resolvedParams.id;
   const supabase = createClient();
+  const { t, language } = useLanguage();
 
   const [listing, setListing] = useState<ListingWithPhotos | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,7 +130,6 @@ export default function ListingDetailPage({
       if (res.ok) {
         setInquirySent(true);
       } else {
-        // Even if database endpoint is in mock mode, show success feedback for demo
         setInquirySent(true);
       }
     } catch {
@@ -157,13 +161,16 @@ export default function ListingDetailPage({
   if (!listing) {
     return (
       <div className="min-h-screen bg-[var(--color-cream)] pt-32 text-center">
-        <h1 className="text-display-md text-[var(--color-forest)] mb-4">Listing not found</h1>
+        <h1 className="text-display-md text-[var(--color-forest)] mb-4">{t.propertyDetail.listingNotFound}</h1>
         <Link href="/browse">
-          <Button variant="gold">Return to Browse</Button>
+          <Button variant="gold">{t.propertyDetail.returnToBrowse}</Button>
         </Link>
       </div>
     );
   }
+
+  // Localized listing representation
+  const localizedListing = getLocalizedListing(listing, language);
 
   const photos = listing.listing_photos?.length
     ? listing.listing_photos
@@ -174,7 +181,7 @@ export default function ListingDetailPage({
   // Calendar rendering helpers
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth();
-  const monthName = currentMonthDate.toLocaleString("default", { month: "long" });
+  const monthName = getLocalizedMonthName(month, language);
   const firstDayIndex = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -191,6 +198,12 @@ export default function ListingDetailPage({
     return listing.price_per_night;
   };
 
+  const getLocalizedPeriodLabel = () => {
+    if (pricePeriod === "week") return t.propertyDetail.week.toLowerCase();
+    if (pricePeriod === "month") return t.propertyDetail.month.toLowerCase();
+    return t.propertyDetail.night.toLowerCase();
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] pt-6 pb-20">
       <div className="mx-auto max-w-7xl px-4">
@@ -201,7 +214,7 @@ export default function ListingDetailPage({
             className="inline-flex items-center gap-1.5 text-sm text-[#6E7771] hover:text-[#1F3A2B] transition-colors"
           >
             <ArrowLeft size={16} />
-            Back to results
+            {t.propertyDetail.backToResults}
           </Link>
           <div className="flex items-center gap-2">
             <button
@@ -209,7 +222,7 @@ export default function ListingDetailPage({
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-[var(--color-sand)] text-[var(--color-charcoal)] hover:bg-[var(--color-cream-dark)] transition-colors"
             >
               <Share2 size={14} />
-              {copiedShare ? "Link copied!" : "Share"}
+              {copiedShare ? t.propertyDetail.linkCopied : t.propertyDetail.share}
             </button>
             <button
               onClick={() => setIsSaved(!isSaved)}
@@ -220,7 +233,7 @@ export default function ListingDetailPage({
               }`}
             >
               <Heart size={14} className={isSaved ? "fill-red-600 text-red-600" : ""} />
-              {isSaved ? "Saved" : "Save"}
+              {isSaved ? t.propertyDetail.saved : t.propertyDetail.save}
             </button>
           </div>
         </div>
@@ -230,7 +243,7 @@ export default function ListingDetailPage({
           <div className="relative aspect-[16/9] md:aspect-[21/9] w-full cursor-pointer" onClick={() => setGalleryModalOpen(true)}>
             <Image
               src={currentPhoto.url}
-              alt={listing.title}
+              alt={localizedListing.title || "Stay photo"}
               fill
               className="object-cover transition-opacity duration-300"
               priority
@@ -241,18 +254,18 @@ export default function ListingDetailPage({
             {/* Badges on hero */}
             <div className="absolute top-4 left-4 flex gap-2">
               <Badge variant="gold" size="md">
-                {propertyTypeLabel(listing.property_type)}
+                {propertyTypeLabel(localizedListing.property_type || "equestrian_farm", language)}
               </Badge>
               {listing.is_featured && (
                 <Badge variant="forest" size="md" className="bg-white/90 text-[var(--color-forest)]">
-                  ★ Featured Stay
+                  {t.propertyDetail.featuredStay}
                 </Badge>
               )}
             </div>
 
             {/* Counter */}
             <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-full">
-              {currentPhotoIndex + 1} / {photos.length} Photos
+              {currentPhotoIndex + 1} / {photos.length} {t.propertyDetail.photos}
             </div>
           </div>
 
@@ -307,16 +320,16 @@ export default function ListingDetailPage({
             {/* Header info */}
             <div>
               <div className="flex items-center gap-2 text-sm text-[var(--color-gold)] font-semibold uppercase tracking-wider mb-2">
-                <span>{propertyTypeLabel(listing.property_type)}</span>
+                <span>{propertyTypeLabel(localizedListing.property_type || "equestrian_farm", language)}</span>
                 <span>•</span>
                 <span>{listing.city}, FL</span>
               </div>
               <h1 className="text-display-lg text-[var(--color-forest)] mb-3">
-                {listing.title}
+                {localizedListing.title}
               </h1>
               <p className="text-sm text-[var(--color-muted)] flex items-center gap-1.5">
                 <MapPin size={16} className="text-[var(--color-gold)]" />
-                {listing.city}, {listing.state} {listing.zip_code} (Approximate area · 5 mins to WEC)
+                {listing.city}, {listing.state} {listing.zip_code} ({t.propertyDetail.approximateZoneBadge.replace("{city}", listing.city)})
               </p>
             </div>
 
@@ -324,38 +337,46 @@ export default function ListingDetailPage({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-white rounded-2xl shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
               {listing.bedrooms > 0 && (
                 <div className="text-center p-2">
-                  <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">Bedrooms</span>
+                  <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
+                    {t.propertyDetail.bedrooms}
+                  </span>
                   <span className="font-serif font-bold text-2xl text-[var(--color-forest)]">{listing.bedrooms}</span>
                 </div>
               )}
               {listing.bathrooms > 0 && (
                 <div className="text-center p-2">
-                  <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">Bathrooms</span>
+                  <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
+                    {t.propertyDetail.bathrooms}
+                  </span>
                   <span className="font-serif font-bold text-2xl text-[var(--color-forest)]">{listing.bathrooms}</span>
                 </div>
               )}
               <div className="text-center p-2">
-                <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">Stalls</span>
+                <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
+                  {t.propertyDetail.stalls}
+                </span>
                 <span className="font-serif font-bold text-2xl text-[var(--color-gold)]">{listing.stalls}</span>
               </div>
               <div className="text-center p-2">
-                <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">Horse Cap</span>
+                <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
+                  {t.propertyDetail.horseCap}
+                </span>
                 <span className="font-serif font-bold text-2xl text-[var(--color-forest)]">{listing.horse_capacity}</span>
               </div>
             </div>
 
             {/* About the property */}
             <div className="bg-white rounded-3xl p-8 shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
-              <h2 className="text-display-sm text-[var(--color-forest)] mb-4">About this stay</h2>
+              <h2 className="text-display-sm text-[var(--color-forest)] mb-4">{t.propertyDetail.aboutStay}</h2>
               <p className="text-[var(--color-charcoal)] leading-relaxed whitespace-pre-line text-[15px]">
-                {listing.horse_description}
+                {localizedListing.horse_description}
               </p>
 
               {listing.acreage && (
                 <div className="mt-6 pt-6 border-t border-[var(--color-sand-light)] flex items-center gap-3">
                   <Home size={20} className="text-[var(--color-gold)]" />
                   <span className="text-sm font-medium text-[var(--color-forest)]">
-                    Total Acreage: <strong>{listing.acreage} acres</strong> of fenced equestrian property
+                    {t.propertyDetail.totalAcreagePrefix} <strong>{listing.acreage}</strong> {t.propertyDetail.totalAcreageSuffix}
                   </span>
                 </div>
               )}
@@ -363,14 +384,14 @@ export default function ListingDetailPage({
 
             {/* Horse Facilities Checklist */}
             <div className="bg-white rounded-3xl p-8 shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
-              <h2 className="text-display-sm text-[var(--color-forest)] mb-2">Horse Facilities & Stabling</h2>
+              <h2 className="text-display-sm text-[var(--color-forest)] mb-2">{t.propertyDetail.facilitiesHeading}</h2>
               <p className="text-sm text-[var(--color-muted)] mb-6">
-                Equestrian features verified for this property:
+                {t.propertyDetail.facilitiesSub}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 {listing.horse_facilities.map((slug) => {
-                  const label = siteConfig.horseFacilities.find((f) => f.value === slug)?.label ?? slug;
+                  const label = getLocalizedFacilityLabel(slug, language);
                   return (
                     <div key={slug} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-cream)]">
                       <div className="w-6 h-6 rounded-full bg-[var(--color-forest)] text-white flex items-center justify-center flex-shrink-0">
@@ -382,22 +403,22 @@ export default function ListingDetailPage({
                 })}
               </div>
 
-              {listing.facility_notes && (
+              {localizedListing.facility_notes && (
                 <div className="bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 rounded-2xl p-4">
                   <p className="text-xs uppercase text-[var(--color-gold)] font-bold tracking-wider mb-1">
-                    Facility Notes from Owner
+                    {t.propertyDetail.facilityNotesTitle}
                   </p>
-                  <p className="text-sm text-[var(--color-charcoal)]">{listing.facility_notes}</p>
+                  <p className="text-sm text-[var(--color-charcoal)]">{localizedListing.facility_notes}</p>
                 </div>
               )}
             </div>
 
             {/* House & Guest Amenities */}
             <div className="bg-white rounded-3xl p-8 shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
-              <h2 className="text-display-sm text-[var(--color-forest)] mb-4">Amenities</h2>
+              <h2 className="text-display-sm text-[var(--color-forest)] mb-4">{t.propertyDetail.amenitiesHeading}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {listing.amenities.map((slug) => {
-                  const label = siteConfig.amenities.find((a) => a.value === slug)?.label ?? slug;
+                  const label = getLocalizedAmenityLabel(slug, language);
                   return (
                     <div key={slug} className="flex items-center gap-2.5 text-sm text-[var(--color-charcoal)]">
                       <CheckCircle2 size={16} className="text-[var(--color-gold)] flex-shrink-0" />
@@ -409,13 +430,13 @@ export default function ListingDetailPage({
 
               <div className="mt-6 pt-6 border-t border-[var(--color-sand-light)] flex flex-wrap gap-6 text-sm text-[var(--color-muted)]">
                 <div>
-                  Pet policy: <strong>{listing.pets_allowed ? "Pets Welcome" : "No Pets in House"}</strong>
+                  {t.propertyDetail.petPolicyLabel} <strong>{listing.pets_allowed ? t.propertyDetail.petsWelcome : t.propertyDetail.noPets}</strong>
                 </div>
                 <div>
-                  Smoking: <strong>{listing.smoking_allowed ? "Allowed in designated areas" : "Strictly Non-Smoking"}</strong>
+                  {t.propertyDetail.smokingPolicyLabel} <strong>{listing.smoking_allowed ? t.propertyDetail.smokingAllowed : t.propertyDetail.nonSmoking}</strong>
                 </div>
                 <div>
-                  Languages: <strong>{listing.languages_spoken.join(", ")}</strong>
+                  {t.propertyDetail.languagesLabel} <strong>{listing.languages_spoken.join(", ")}</strong>
                 </div>
               </div>
             </div>
@@ -424,9 +445,9 @@ export default function ListingDetailPage({
             <div className="bg-white rounded-3xl p-8 shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-display-sm text-[var(--color-forest)]">Availability</h2>
+                  <h2 className="text-display-sm text-[var(--color-forest)]">{t.propertyDetail.availabilityHeading}</h2>
                   <p className="text-xs text-[var(--color-muted)] mt-1">
-                    Availability is for reference only. Confirm final dates directly with the property owner.
+                    {t.propertyDetail.availabilitySub}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -451,13 +472,13 @@ export default function ListingDetailPage({
               {/* Month Grid */}
               <div className="border border-[var(--color-sand-light)] rounded-2xl p-4">
                 <div className="grid grid-cols-7 text-center text-xs font-semibold text-[var(--color-muted)] mb-2">
-                  <span>Sun</span>
-                  <span>Mon</span>
-                  <span>Tue</span>
-                  <span>Wed</span>
-                  <span>Thu</span>
-                  <span>Fri</span>
-                  <span>Sat</span>
+                  <span>{t.propertyDetail.daysOfWeek.sun}</span>
+                  <span>{t.propertyDetail.daysOfWeek.mon}</span>
+                  <span>{t.propertyDetail.daysOfWeek.tue}</span>
+                  <span>{t.propertyDetail.daysOfWeek.wed}</span>
+                  <span>{t.propertyDetail.daysOfWeek.thu}</span>
+                  <span>{t.propertyDetail.daysOfWeek.fri}</span>
+                  <span>{t.propertyDetail.daysOfWeek.sat}</span>
                 </div>
                 <div className="grid grid-cols-7 gap-1 text-center text-sm">
                   {[...Array(firstDayIndex)].map((_, i) => (
@@ -483,25 +504,26 @@ export default function ListingDetailPage({
                 <div className="flex items-center gap-6 mt-4 pt-3 border-t border-[var(--color-sand-light)] text-xs text-[var(--color-muted)]">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded bg-[var(--color-cream)] border border-[var(--color-sand)]" />
-                    <span>Available</span>
+                    <span>{t.propertyDetail.availableLegend}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded bg-gray-100 line-through text-gray-400 flex items-center justify-center text-[10px]">✕</div>
-                    <span>Booked / Reserved</span>
+                    <span>{t.propertyDetail.bookedLegend}</span>
                   </div>
-                  <span className="ml-auto">Minimum stay: {listing.minimum_stay} night{listing.minimum_stay > 1 ? "s" : ""}</span>
+                  <span className="ml-auto">
+                    {t.propertyDetail.minStayLabel} {listing.minimum_stay} {listing.minimum_stay > 1 ? t.propertyDetail.nightPlural : t.propertyDetail.nightSingular}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Approximate Location & Privacy */}
             <div className="bg-white rounded-3xl p-8 shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
-              <h2 className="text-display-sm text-[var(--color-forest)] mb-2">Location</h2>
+              <h2 className="text-display-sm text-[var(--color-forest)] mb-2">{t.propertyDetail.locationHeading}</h2>
               <p className="text-sm text-[var(--color-muted)] mb-6">
-                For owner and guest privacy, the pin indicates the approximate area in {listing.city}, FL. Exact address will be shared directly upon confirmation.
+                {t.propertyDetail.locationSub.replace("{city}", listing.city)}
               </p>
               <div className="h-64 rounded-2xl bg-[var(--color-sand-light)] relative overflow-hidden flex items-center justify-center border border-[var(--color-sand)]">
-                {/* Visual approximate map illustration */}
                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(#1e3a2f 1px, transparent 1px)", backgroundSize: "16px 16px" }} />
                 <div className="relative z-10 flex flex-col items-center">
                   <div className="w-24 h-24 rounded-full bg-[var(--color-gold)]/20 flex items-center justify-center animate-pulse">
@@ -510,7 +532,7 @@ export default function ListingDetailPage({
                     </div>
                   </div>
                   <span className="mt-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-forest)] bg-white/90 px-3 py-1 rounded-full shadow-sm">
-                    Approximate zone · {listing.city}, FL
+                    {t.propertyDetail.approximateZoneBadge.replace("{city}", listing.city)}
                   </span>
                 </div>
               </div>
@@ -528,7 +550,7 @@ export default function ListingDetailPage({
                       ${getActiveRate()}
                     </span>
                     <span className="text-sm text-[var(--color-muted)]">
-                      / {pricePeriod}
+                      / {getLocalizedPeriodLabel()}
                     </span>
                   </div>
                 </div>
@@ -543,7 +565,7 @@ export default function ListingDetailPage({
                         pricePeriod === "night" ? "bg-white shadow-sm text-[var(--color-forest)]" : "text-[var(--color-muted)]"
                       }`}
                     >
-                      Night
+                      {t.propertyDetail.night}
                     </button>
                     {listing.price_per_week && (
                       <button
@@ -553,7 +575,7 @@ export default function ListingDetailPage({
                           pricePeriod === "week" ? "bg-white shadow-sm text-[var(--color-forest)]" : "text-[var(--color-muted)]"
                         }`}
                       >
-                        Week
+                        {t.propertyDetail.week}
                       </button>
                     )}
                     {listing.price_per_month && (
@@ -564,7 +586,7 @@ export default function ListingDetailPage({
                           pricePeriod === "month" ? "bg-white shadow-sm text-[var(--color-forest)]" : "text-[var(--color-muted)]"
                         }`}
                       >
-                        Month
+                        {t.propertyDetail.month}
                       </button>
                     )}
                   </div>
@@ -572,7 +594,7 @@ export default function ListingDetailPage({
 
                 <div className="flex items-center gap-2 p-2.5 bg-green-50 rounded-xl text-xs text-green-800 font-medium">
                   <Shield size={14} className="text-green-700 flex-shrink-0" />
-                  <span><strong>Direct booking:</strong> 0% platform commission taken.</span>
+                  <span>{t.propertyDetail.directBookingNote}</span>
                 </div>
               </div>
 
@@ -586,9 +608,9 @@ export default function ListingDetailPage({
                   <div className="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center mx-auto">
                     <Check size={24} />
                   </div>
-                  <h3 className="font-serif font-semibold text-lg text-green-900">Inquiry Sent!</h3>
+                  <h3 className="font-serif font-semibold text-lg text-green-900">{t.propertyDetail.inquirySentTitle}</h3>
                   <p className="text-xs text-green-700 leading-relaxed">
-                    Your message has been sent directly to <strong>{listing.contact_name}</strong>. They will respond to <em>{inquiryEmail}</em> shortly.
+                    {t.propertyDetail.inquirySentSuccess.replace("{name}", listing.contact_name || "")}
                   </p>
                   <Button
                     variant="forest"
@@ -596,17 +618,17 @@ export default function ListingDetailPage({
                     className="w-full mt-2"
                     onClick={() => setInquirySent(false)}
                   >
-                    Send another message
+                    {t.propertyDetail.sendAnotherMessage}
                   </Button>
                 </motion.div>
               ) : (
                 <form onSubmit={handleInquirySubmit} className="space-y-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-forest)]">
-                    Contact Host Directly
+                    {t.propertyDetail.contactHostDirectly}
                   </p>
 
                   <div>
-                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">Your Name</label>
+                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">{t.propertyDetail.yourName}</label>
                     <input
                       type="text"
                       required
@@ -618,7 +640,7 @@ export default function ListingDetailPage({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">Your Email</label>
+                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">{t.propertyDetail.yourEmail}</label>
                     <input
                       type="email"
                       required
@@ -631,7 +653,7 @@ export default function ListingDetailPage({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">Arrival</label>
+                      <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">{t.propertyDetail.arrival}</label>
                       <input
                         type="date"
                         value={inquiryArrival}
@@ -640,7 +662,7 @@ export default function ListingDetailPage({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">Departure</label>
+                      <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">{t.propertyDetail.departure}</label>
                       <input
                         type="date"
                         value={inquiryDeparture}
@@ -651,7 +673,7 @@ export default function ListingDetailPage({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">Number of Horses</label>
+                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">{t.propertyDetail.numberOfHorses}</label>
                     <select
                       value={inquiryHorses}
                       onChange={(e) => setInquiryHorses(Number(e.target.value))}
@@ -659,18 +681,18 @@ export default function ListingDetailPage({
                     >
                       {[...Array(listing.horse_capacity || 10)].map((_, i) => (
                         <option key={i + 1} value={i + 1}>
-                          {i + 1} horse{i > 0 ? "s" : ""}
+                          {i + 1} {i > 0 ? t.propertyDetail.horsePlural : t.propertyDetail.horseSingle}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">Message to Host</label>
+                    <label className="block text-xs font-medium text-[var(--color-charcoal)] mb-1">{t.propertyDetail.messageToHost}</label>
                     <textarea
                       required
                       rows={3}
-                      placeholder="Introduce yourself, your horses, disciplines, and desired dates..."
+                      placeholder={t.propertyDetail.messagePlaceholder}
                       value={inquiryMessage}
                       onChange={(e) => setInquiryMessage(e.target.value)}
                       className="input-base text-sm py-2 resize-none"
@@ -685,7 +707,7 @@ export default function ListingDetailPage({
                     isLoading={submittingInquiry}
                   >
                     <Send size={16} />
-                    Send Inquiry to Host
+                    {t.propertyDetail.sendInquiryBtn}
                   </Button>
                 </form>
               )}
@@ -697,12 +719,12 @@ export default function ListingDetailPage({
                     {listing.contact_name?.[0] || "H"}
                   </div>
                   <div>
-                    <p className="text-xs text-[var(--color-muted)]">Hosted by</p>
+                    <p className="text-xs text-[var(--color-muted)]">{t.propertyDetail.hostedBy}</p>
                     <p className="text-sm font-semibold text-[var(--color-forest)]">{listing.contact_name}</p>
                   </div>
                 </div>
                 <div className="mt-3 flex gap-3 text-xs text-[var(--color-muted)]">
-                  <span className="flex items-center gap-1"><Mail size={12} /> Direct message verified</span>
+                  <span className="flex items-center gap-1"><Mail size={12} /> {t.propertyDetail.directMessageVerified}</span>
                 </div>
               </div>
             </div>
@@ -715,12 +737,12 @@ export default function ListingDetailPage({
         isOpen={galleryModalOpen}
         onClose={() => setGalleryModalOpen(false)}
         size="xl"
-        title="Photo Gallery"
+        title={t.propertyDetail.photoGallery}
       >
         <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
           {photos.map((photo, i) => (
             <div key={photo.id || i} className="relative aspect-[16/10] rounded-2xl overflow-hidden">
-              <Image src={photo.url} alt={`${listing.title} photo ${i + 1}`} fill className="object-cover" />
+              <Image src={photo.url} alt={`${localizedListing.title} photo ${i + 1}`} fill className="object-cover" />
             </div>
           ))}
         </div>

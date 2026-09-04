@@ -10,6 +10,7 @@ export interface Translations {
     contact: string;
     createAccount: string;
     signIn: string;
+    signOut: string;
     myAccount: string;
     admin: string;
   };
@@ -96,6 +97,75 @@ export interface Translations {
     manageAlerts: string;
     copyright: string;
   };
+  propertyDetail: {
+    backToResults: string;
+    share: string;
+    linkCopied: string;
+    save: string;
+    saved: string;
+    featuredStay: string;
+    photos: string;
+    photoGallery: string;
+    bedrooms: string;
+    bathrooms: string;
+    stalls: string;
+    horseCap: string;
+    aboutStay: string;
+    totalAcreagePrefix: string;
+    totalAcreageSuffix: string;
+    facilitiesHeading: string;
+    facilitiesSub: string;
+    facilityNotesTitle: string;
+    amenitiesHeading: string;
+    petPolicyLabel: string;
+    petsWelcome: string;
+    noPets: string;
+    smokingPolicyLabel: string;
+    smokingAllowed: string;
+    nonSmoking: string;
+    languagesLabel: string;
+    availabilityHeading: string;
+    availabilitySub: string;
+    availableLegend: string;
+    bookedLegend: string;
+    minStayLabel: string;
+    nightSingular: string;
+    nightPlural: string;
+    locationHeading: string;
+    locationSub: string;
+    approximateZoneBadge: string;
+    night: string;
+    week: string;
+    month: string;
+    directBookingNote: string;
+    contactHostDirectly: string;
+    yourName: string;
+    yourEmail: string;
+    arrival: string;
+    departure: string;
+    numberOfHorses: string;
+    horseSingle: string;
+    horsePlural: string;
+    messageToHost: string;
+    messagePlaceholder: string;
+    sendInquiryBtn: string;
+    inquirySentTitle: string;
+    inquirySentSuccess: string;
+    sendAnotherMessage: string;
+    hostedBy: string;
+    directMessageVerified: string;
+    listingNotFound: string;
+    returnToBrowse: string;
+    daysOfWeek: {
+      sun: string;
+      mon: string;
+      tue: string;
+      wed: string;
+      thu: string;
+      fri: string;
+      sat: string;
+    };
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -109,6 +179,7 @@ export const translations: Record<Language, Translations> = {
       contact: "Contact",
       createAccount: "Create your account",
       signIn: "Sign in",
+      signOut: "Log out",
       myAccount: "My account",
       admin: "Admin",
     },
@@ -200,6 +271,79 @@ export const translations: Record<Language, Translations> = {
       copyright:
         "This platform is operated by My Equine Services. All rights reserved.",
     },
+    propertyDetail: {
+      backToResults: "Back to results",
+      share: "Share",
+      linkCopied: "Link copied!",
+      save: "Save",
+      saved: "Saved",
+      featuredStay: "★ Featured Stay",
+      photos: "Photos",
+      photoGallery: "Photo Gallery",
+      bedrooms: "Bedrooms",
+      bathrooms: "Bathrooms",
+      stalls: "Stalls",
+      horseCap: "Horse Cap",
+      aboutStay: "About this stay",
+      totalAcreagePrefix: "Total Acreage:",
+      totalAcreageSuffix: "acres of fenced equestrian property",
+      facilitiesHeading: "Horse Facilities & Stabling",
+      facilitiesSub: "Equestrian features verified for this property:",
+      facilityNotesTitle: "Facility Notes from Owner",
+      amenitiesHeading: "Amenities",
+      petPolicyLabel: "Pet policy:",
+      petsWelcome: "Pets Welcome",
+      noPets: "No Pets in House",
+      smokingPolicyLabel: "Smoking:",
+      smokingAllowed: "Allowed in designated areas",
+      nonSmoking: "Strictly Non-Smoking",
+      languagesLabel: "Languages:",
+      availabilityHeading: "Availability",
+      availabilitySub:
+        "Availability is for reference only. Confirm final dates directly with the property owner.",
+      availableLegend: "Available",
+      bookedLegend: "Booked / Reserved",
+      minStayLabel: "Minimum stay:",
+      nightSingular: "night",
+      nightPlural: "nights",
+      locationHeading: "Location",
+      locationSub:
+        "For owner and guest privacy, the pin indicates the approximate area in {city}, FL. Exact address will be shared directly upon confirmation.",
+      approximateZoneBadge: "Approximate zone · {city}, FL",
+      night: "Night",
+      week: "Week",
+      month: "Month",
+      directBookingNote: "Direct booking: 0% platform commission taken.",
+      contactHostDirectly: "Contact Host Directly",
+      yourName: "Your Name",
+      yourEmail: "Your Email",
+      arrival: "Arrival",
+      departure: "Departure",
+      numberOfHorses: "Number of Horses",
+      horseSingle: "horse",
+      horsePlural: "horses",
+      messageToHost: "Message to Host",
+      messagePlaceholder:
+        "Introduce yourself, your horses, disciplines, and desired dates...",
+      sendInquiryBtn: "Send Inquiry to Host",
+      inquirySentTitle: "Inquiry Sent!",
+      inquirySentSuccess:
+        "Your message has been sent directly to {name}. They will respond shortly.",
+      sendAnotherMessage: "Send another message",
+      hostedBy: "Hosted by",
+      directMessageVerified: "Direct message verified",
+      listingNotFound: "Listing not found",
+      returnToBrowse: "Return to Browse",
+      daysOfWeek: {
+        sun: "Sun",
+        mon: "Mon",
+        tue: "Tue",
+        wed: "Wed",
+        thu: "Thu",
+        fri: "Fri",
+        sat: "Sat",
+      },
+    },
   },
 
   es: {
@@ -212,6 +356,7 @@ export const translations: Record<Language, Translations> = {
       contact: "Contacto",
       createAccount: "Crear cuenta",
       signIn: "Iniciar sesión",
+      signOut: "Cerrar sesión",
       myAccount: "Mi cuenta",
       admin: "Admin",
     },
@@ -305,6 +450,79 @@ export const translations: Record<Language, Translations> = {
       copyright:
         "Esta plataforma es operada por My Equine Services. Todos los derechos reservados.",
     },
+    propertyDetail: {
+      backToResults: "Volver a los resultados",
+      share: "Compartir",
+      linkCopied: "¡Enlace copiado!",
+      save: "Guardar",
+      saved: "Guardado",
+      featuredStay: "★ Estancia Destacada",
+      photos: "Fotos",
+      photoGallery: "Galería de Fotos",
+      bedrooms: "Habitaciones",
+      bathrooms: "Baños",
+      stalls: "Establos",
+      horseCap: "Capacidad Equina",
+      aboutStay: "Sobre esta estancia",
+      totalAcreagePrefix: "Superficie Total:",
+      totalAcreageSuffix: "acres de finca ecuestre vallada",
+      facilitiesHeading: "Instalaciones Hípicas y Establos",
+      facilitiesSub: "Características ecuestres verificadas para esta propiedad:",
+      facilityNotesTitle: "Notas de las instalaciones del propietario",
+      amenitiesHeading: "Servicios y Comodidades",
+      petPolicyLabel: "Política de mascotas:",
+      petsWelcome: "Se admiten mascotas",
+      noPets: "No se admiten mascotas en la casa",
+      smokingPolicyLabel: "Fumar:",
+      smokingAllowed: "Permitido en zonas designadas",
+      nonSmoking: "Estrictamente no fumadores",
+      languagesLabel: "Idiomas:",
+      availabilityHeading: "Disponibilidad",
+      availabilitySub:
+        "La disponibilidad es solo de referencia. Confirma las fechas finales directamente con el propietario.",
+      availableLegend: "Disponible",
+      bookedLegend: "Reservado / No disponible",
+      minStayLabel: "Estancia mínima:",
+      nightSingular: "noche",
+      nightPlural: "noches",
+      locationHeading: "Ubicación",
+      locationSub:
+        "Por privacidad del propietario y los huéspedes, el marcador indica el área aproximada en {city}, FL. La dirección exacta se facilitará tras la confirmación.",
+      approximateZoneBadge: "Zona aproximada · {city}, FL",
+      night: "Noche",
+      week: "Semana",
+      month: "Mes",
+      directBookingNote: "Reserva directa: 0% de comisión de plataforma.",
+      contactHostDirectly: "Contactar al anfitrión directamente",
+      yourName: "Tu Nombre",
+      yourEmail: "Tu Correo Electrónico",
+      arrival: "Llegada",
+      departure: "Salida",
+      numberOfHorses: "Número de Caballos",
+      horseSingle: "caballo",
+      horsePlural: "caballos",
+      messageToHost: "Mensaje al anfitrión",
+      messagePlaceholder:
+        "Preséntate, menciona tus caballos, disciplinas y fechas deseadas...",
+      sendInquiryBtn: "Enviar consulta al anfitrión",
+      inquirySentTitle: "¡Consulta Enviada!",
+      inquirySentSuccess:
+        "Tu mensaje ha sido enviado directamente a {name}. Responderán a la brevedad.",
+      sendAnotherMessage: "Enviar otro mensaje",
+      hostedBy: "Hospedado por",
+      directMessageVerified: "Mensaje directo verificado",
+      listingNotFound: "Propiedad no encontrada",
+      returnToBrowse: "Volver a explorar",
+      daysOfWeek: {
+        sun: "Dom",
+        mon: "Lun",
+        tue: "Mar",
+        wed: "Mié",
+        thu: "Jue",
+        fri: "Vie",
+        sat: "Sáb",
+      },
+    },
   },
 
   fr: {
@@ -317,6 +535,7 @@ export const translations: Record<Language, Translations> = {
       contact: "Contact",
       createAccount: "Créer un compte",
       signIn: "Se connecter",
+      signOut: "Déconnexion",
       myAccount: "Mon compte",
       admin: "Admin",
     },
@@ -409,6 +628,79 @@ export const translations: Record<Language, Translations> = {
       manageAlerts: "Gérer les alertes e-mail",
       copyright:
         "Cette plateforme est gérée par My Equine Services. Tous droits réservés.",
+    },
+    propertyDetail: {
+      backToResults: "Retour aux résultats",
+      share: "Partager",
+      linkCopied: "Lien copié !",
+      save: "Enregistrer",
+      saved: "Enregistré",
+      featuredStay: "★ Séjour en Vedette",
+      photos: "Photos",
+      photoGallery: "Galerie de Photos",
+      bedrooms: "Chambres",
+      bathrooms: "Salles de bain",
+      stalls: "Boxes",
+      horseCap: "Capacité Chevaux",
+      aboutStay: "À propos de ce séjour",
+      totalAcreagePrefix: "Superficie Totale :",
+      totalAcreageSuffix: "acres de domaine équestre clôturé",
+      facilitiesHeading: "Infrastructures Équestres & Écuries",
+      facilitiesSub: "Équipements équestres vérifiés pour cette propriété :",
+      facilityNotesTitle: "Notes sur les installations par le propriétaire",
+      amenitiesHeading: "Équipements & Confort",
+      petPolicyLabel: "Animaux de compagnie :",
+      petsWelcome: "Animaux bienvenus",
+      noPets: "Pas d'animaux dans l'habitation",
+      smokingPolicyLabel: "Fumeurs :",
+      smokingAllowed: "Autorisé dans les zones réservées",
+      nonSmoking: "Strictement non-fumeur",
+      languagesLabel: "Langues :",
+      availabilityHeading: "Disponibilité",
+      availabilitySub:
+        "Disponibilité donnée à titre indicatif. Confirmez vos dates finales directement avec le propriétaire.",
+      availableLegend: "Disponible",
+      bookedLegend: "Réservé / Indisponible",
+      minStayLabel: "Séjour minimum :",
+      nightSingular: "nuit",
+      nightPlural: "nuits",
+      locationHeading: "Localisation",
+      locationSub:
+        "Pour la tranquillité de l'hôte et des voyageurs, le repère indique la zone approximative à {city}, FL. L'adresse exacte sera communiquée après confirmation.",
+      approximateZoneBadge: "Zone approximative · {city}, FL",
+      night: "Nuit",
+      week: "Semaine",
+      month: "Mois",
+      directBookingNote: "Réservation directe : 0% de commission de plateforme.",
+      contactHostDirectly: "Contacter l'hôte en direct",
+      yourName: "Votre Nom",
+      yourEmail: "Votre E-mail",
+      arrival: "Arrivée",
+      departure: "Départ",
+      numberOfHorses: "Nombre de Chevaux",
+      horseSingle: "cheval",
+      horsePlural: "chevaux",
+      messageToHost: "Message à l'hôte",
+      messagePlaceholder:
+        "Présentez-vous, vos chevaux, vos disciplines et vos dates souhaitées...",
+      sendInquiryBtn: "Envoyer le message à l'hôte",
+      inquirySentTitle: "Message Envoyé !",
+      inquirySentSuccess:
+        "Votre message a été transmis directement à {name}. Une réponse vous parviendra sous peu.",
+      sendAnotherMessage: "Envoyer un autre message",
+      hostedBy: "Hôte :",
+      directMessageVerified: "Messagerie directe vérifiée",
+      listingNotFound: "Annonce introuvable",
+      returnToBrowse: "Retour aux annonces",
+      daysOfWeek: {
+        sun: "Dim",
+        mon: "Lun",
+        tue: "Mar",
+        wed: "Mer",
+        thu: "Jeu",
+        fri: "Ven",
+        sat: "Sam",
+      },
     },
   },
 };

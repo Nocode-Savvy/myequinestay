@@ -1,5 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { getLocalizedPropertyType } from "./i18n/listing-localization";
+import type { Language } from "./i18n/translations";
 
 /** Combines class names and merges Tailwind conflicts */
 export function cn(...inputs: ClassValue[]) {
@@ -49,16 +51,6 @@ export function pluralize(count: number, singular: string, plural?: string): str
 }
 
 /** Converts property type slug to display label */
-export function propertyTypeLabel(slug: string): string {
-  const map: Record<string, string> = {
-    equestrian_farm: "Equestrian Farm",
-    house: "House",
-    apartment: "Apartment",
-    private_bedroom: "Private Bedroom",
-    rv: "RV",
-    rv_hookup: "RV Hookup",
-    pasture_rental: "Pasture Rental",
-    barn_stall: "Barn / Stall",
-  };
-  return map[slug] ?? slug;
+export function propertyTypeLabel(slug: string, lang: Language = "en"): string {
+  return getLocalizedPropertyType(slug, lang);
 }
