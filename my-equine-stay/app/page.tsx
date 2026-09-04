@@ -362,20 +362,20 @@ function HeroSection({ onRequireAuth }: { onRequireAuth: (path: string) => void 
       {/* Hero image */}
       <div className="relative w-full">
         <Image
-          src="https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=1600&q=85"
-          alt="Ocala horse farm at golden hour"
-          width={1600}
-          height={2000}
-          className="w-full h-[100vh] sm:h-[90vh] object-cover object-[75%_center] sm:object-center"
+          src="/hero.jpg"
+          alt="White horse in equestrian pasture at sunset"
+          width={1920}
+          height={1080}
+          className="w-full h-[100vh] sm:h-[90vh] object-cover object-[70%_center] sm:object-center"
           priority
         />
-        {/* Cream gradient overlay from left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#FAF7F2]/85 via-[#FAF7F2]/30 to-transparent" />
+        {/* Rich cinematic gradient overlay: gives depth without washing out the photo */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
 
         {/* Hero text */}
         <div className="absolute inset-0 flex flex-col justify-start px-6 pt-16 sm:px-12 sm:pt-20">
           <motion.h1
-            className="font-serif text-[46px] sm:text-6xl leading-[1.02] text-[#1B221E] max-w-[8ch]"
+            className="font-serif text-[46px] sm:text-6xl leading-[1.02] text-white max-w-[8ch] drop-shadow-md"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: "easeOut" }}
@@ -384,7 +384,7 @@ function HeroSection({ onRequireAuth }: { onRequireAuth: (path: string) => void 
           </motion.h1>
 
           <motion.p
-            className="mt-3 text-3xl sm:text-4xl text-[#E1B534]"
+            className="mt-3 text-3xl sm:text-4xl text-[#F3C644] drop-shadow-md"
             style={{ fontFamily: '"Great Vibes", "Snell Roundhand", cursive', fontStyle: "italic" }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -400,10 +400,10 @@ function HeroSection({ onRequireAuth }: { onRequireAuth: (path: string) => void 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.2, ease: "easeOut" }}
           >
-            <div className="rounded-2xl bg-[#FAF7F2]/70 backdrop-blur-sm px-5 py-3 text-[#1B221E] text-[15px] leading-snug ring-1 ring-white/40">
+            <div className="rounded-2xl bg-black/40 backdrop-blur-md px-5 py-3 text-white text-[15px] leading-snug ring-1 ring-white/25 shadow-lg">
               {t.hero.pill1}
             </div>
-            <div className="rounded-2xl bg-[#FAF7F2]/70 backdrop-blur-sm px-5 py-3 text-[#1B221E] text-[15px] leading-snug ring-1 ring-white/40">
+            <div className="rounded-2xl bg-black/40 backdrop-blur-md px-5 py-3 text-white text-[15px] leading-snug ring-1 ring-white/25 shadow-lg">
               {t.hero.pill2}
             </div>
           </motion.div>
