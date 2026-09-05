@@ -29,6 +29,7 @@ import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
 import { createClient } from "@/lib/supabase/client";
 import type { ListingWithPhotos } from "@/types/database";
 import { propertyTypeLabel } from "@/lib/utils";
+import { GoogleMapWrapper, MapErrorBoundary } from "@/components/ui/google-map";
 import { useLanguage } from "@/lib/i18n/context";
 import {
   getLocalizedListing,
@@ -605,18 +606,16 @@ export default function ListingDetailPage({
               <p className="text-sm text-[var(--color-muted)] mb-6">
                 {t.propertyDetail.locationSub.replace("{city}", listing.city)}
               </p>
-              <div className="h-64 rounded-2xl bg-[var(--color-sand-light)] relative overflow-hidden flex items-center justify-center border border-[var(--color-sand)]">
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(#1e3a2f 1px, transparent 1px)", backgroundSize: "16px 16px" }} />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-24 h-24 rounded-full bg-[var(--color-gold)]/20 flex items-center justify-center animate-pulse">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-gold)] text-white flex items-center justify-center shadow-lg font-bold text-sm">
-                      <MapPin size={24} />
-                    </div>
-                  </div>
-                  <span className="mt-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-forest)] bg-white/90 px-3 py-1 rounded-full shadow-sm">
-                    {t.propertyDetail.approximateZoneBadge.replace("{city}", listing.city)}
-                  </span>
-                </div>
+              <div className="h-72 sm:h-96 rounded-2xl overflow-hidden border border-[var(--color-sand)] relative bg-[#FAF7F2]">
+                <MapErrorBoundary>
+                  <GoogleMapWrapper
+                    mode="property"
+                    latitude={Number(listing.latitude) || 29.1872}
+                    longitude={Number(listing.longitude) || -82.1401}
+                    city={listing.city}
+                    className="w-full h-full"
+                  />
+                </MapErrorBoundary>
               </div>
             </div>
           </div>

@@ -119,12 +119,22 @@ const categoryLabels: Record<string, string> = {
 /* ============================================================
    Google Maps Component (browse / search view) — responsive
    ============================================================ */
-function GoogleMapView({ listings }: { listings: ListingWithPhotos[] }) {
+function GoogleMapView({
+  listings,
+  selectedListingId,
+  onSelectListing,
+}: {
+  listings: ListingWithPhotos[];
+  selectedListingId?: string | null;
+  onSelectListing?: (id: string | null) => void;
+}) {
   return (
     <MapErrorBoundary>
       <GoogleMapWrapper
         mode="browse"
         listings={listings}
+        selectedListingId={selectedListingId}
+        onSelectListing={onSelectListing}
         className="w-full h-[50vh] md:h-[550px] lg:h-[650px] rounded-2xl overflow-hidden border border-[#E5E0D6] bg-white md:sticky md:top-24"
       />
     </MapErrorBoundary>
@@ -215,6 +225,7 @@ function BrowseContent() {
   const [sort, setSort] = useState("newest");
   const [selectedType, setSelectedType] = useState(searchParams.get("type") ?? "");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<FilterValues>(DEFAULT_FILTER_VALUES);
 
@@ -453,7 +464,11 @@ function BrowseContent() {
           /* Split View — stacked on mobile, side-by-side on desktop */
           <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 items-start">
             {/* Map — full width on mobile, sticky on desktop */}
-            <GoogleMapView listings={listings} />
+            <GoogleMapView
+              listings={listings}
+              selectedListingId={selectedListingId}
+              onSelectListing={setSelectedListingId}
+            />
 
             {/* Compact card list */}
             <div className="space-y-4 w-full">
@@ -464,13 +479,17 @@ function BrowseContent() {
                 const loc = getLocalizedListing(listing, language);
                 const displayPrice = listing.price_per_night || 0;
                 const period = listing.price_per_night ? "night" : "week";
+                const isSelected = selectedListingId === listing.id;
 
                 return (
                   <Link
                     key={listing.id}
                     href={`/property/${listing.id}`}
+                    onMouseEnter={() => setSelectedListingId(listing.id)}
                     className={`group block rounded-2xl border bg-white p-3.5 hover:shadow-sm transition-all ${
-                      listing.is_featured || listing.plan === "premium"
+                      isSelected
+                        ? "border-[#E1B534] ring-2 ring-[#E1B534]/50 shadow-md"
+                        : listing.is_featured || listing.plan === "premium"
                         ? "border-[#E1B534]/60 ring-1 ring-[#E1B534]/20"
                         : "border-[#E5E0D6] hover:border-[#1F3A2B]"
                     }`}

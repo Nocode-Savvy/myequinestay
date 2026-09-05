@@ -4,93 +4,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ArrowLeft, Search, MessageCircle } from "lucide-react";
 import Link from "next/link";
-
-interface FAQItem {
-  question: string;
-  answer: string;
-  category: "platform" | "accounts" | "verification";
-}
-
-const FAQS: FAQItem[] = [
-  // Platform
-  {
-    category: "platform",
-    question: "How does My Equine Stay work?",
-    answer:
-      "My Equine Stay is a connection platform. We allow users to find properties and connect directly with property owners. We do not handle bookings, payments, or agreements.",
-  },
-  {
-    category: "platform",
-    question: "Is booking done on My Equine Stay?",
-    answer:
-      "No. My Equine Stay does not process bookings or payments. All arrangements are made directly between users.",
-  },
-  {
-    category: "platform",
-    question: "How do I contact a property owner?",
-    answer:
-      "Create an account, browse listings, and click \"Contact Owner\" on any property to connect directly.",
-  },
-
-  // Accounts & Listings
-  {
-    category: "accounts",
-    question: "Do I need an account?",
-    answer:
-      "Yes. You need an account to contact property owners or list a property.",
-  },
-  {
-    category: "accounts",
-    question: "How do I list my property?",
-    answer:
-      "Create an account, choose a listing plan, and publish your property. You will receive inquiries directly from users.",
-  },
-  {
-    category: "accounts",
-    question: "What does a subscription include?",
-    answer:
-      "Subscriptions include listing creation and management, visibility on the platform, and direct communication with users.",
-  },
-  {
-    category: "accounts",
-    question: "How does pricing work?",
-    answer:
-      "Property owners set their own pricing and terms. All pricing and agreements are negotiated directly between users.",
-  },
-
-  // Verification & Responsibility
-  {
-    category: "verification",
-    question: "Are properties verified?",
-    answer:
-      "No. My Equine Stay does not verify listings. Users are responsible for verifying information and making their own decisions.",
-  },
-  {
-    category: "verification",
-    question: "Are we responsible for agreements?",
-    answer:
-      "No. My Equine Stay is not involved in any agreements, transactions, or disputes between users.",
-  },
-  {
-    category: "verification",
-    question: "Who handles property conditions?",
-    answer:
-      "Users are solely responsible for their actions, listings, agreements, and interactions with other users.",
-  },
-  {
-    category: "verification",
-    question: "Do you handle payments?",
-    answer: "No. We do not process or hold any payments.",
-  },
-  {
-    category: "verification",
-    question: "What happens if there is a problem?",
-    answer:
-      "All issues must be resolved directly between users. My Equine Stay is not responsible.",
-  },
-];
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function FAQPage() {
+  const { t } = useLanguage();
+  const faq = t.faq;
+
   const [search, setSearch] = useState("");
   const [openIndices, setOpenIndices] = useState<number[]>([0]);
 
@@ -100,15 +19,15 @@ export default function FAQPage() {
     );
   };
 
-  const categories: { id: FAQItem["category"]; label: string }[] = [
-    { id: "platform", label: "About the platform" },
-    { id: "accounts", label: "Accounts & listings" },
-    { id: "verification", label: "Verification & responsibility" },
+  const categories: { id: "platform" | "accounts" | "verification"; label: string }[] = [
+    { id: "platform", label: faq.categories.platform },
+    { id: "accounts", label: faq.categories.accounts },
+    { id: "verification", label: faq.categories.verification },
   ];
 
   const searchLower = search.toLowerCase();
   const filteredBySearch = search
-    ? FAQS.filter(
+    ? faq.items.filter(
         (f) =>
           f.question.toLowerCase().includes(searchLower) ||
           f.answer.toLowerCase().includes(searchLower)
@@ -126,15 +45,14 @@ export default function FAQPage() {
             className="inline-flex items-center gap-2 text-sm text-[#1F3A2B]/90 hover:text-[#1F3A2B] mb-6 transition-colors"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
-            Back to home
+            {faq.backToHome}
           </Link>
           <div className="text-[10px] uppercase tracking-[0.2em] text-[#6E7771] mb-3">
-            Help center
+            {faq.badge}
           </div>
-          <h1 className="section-heading">Frequently asked questions</h1>
+          <h1 className="section-heading">{faq.title}</h1>
           <p className="mt-4 text-[#1B221E]/70 max-w-2xl">
-            Everything you need to know about connecting with property owners on
-            My Equine Stay.
+            {faq.subtitle}
           </p>
 
           <div className="mt-8 relative max-w-xl">
@@ -144,7 +62,7 @@ export default function FAQPage() {
             />
             <input
               type="search"
-              placeholder="Search questions…"
+              placeholder={faq.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-full bg-white border border-[#E5E0D6] pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F3A2B]/40 transition-all"
@@ -159,7 +77,7 @@ export default function FAQPage() {
           <div className="space-y-3">
             {filteredBySearch.length === 0 ? (
               <p className="text-center text-sm text-[#6E7771] py-8">
-                No questions match your search.
+                {faq.noResults}
               </p>
             ) : (
               filteredBySearch.map((item, idx) => {
@@ -207,8 +125,8 @@ export default function FAQPage() {
         ) : (
           <div className="space-y-12">
             {categories.map((cat) => {
-              const items = FAQS.filter((f) => f.category === cat.id);
-              const baseIdx = FAQS.indexOf(items[0]);
+              const items = faq.items.filter((f) => f.category === cat.id);
+              const baseIdx = faq.items.indexOf(items[0]);
               return (
                 <div key={cat.id}>
                   <div className="flex items-baseline gap-3 mb-5">
@@ -274,10 +192,10 @@ export default function FAQPage() {
             className="inline-flex items-center gap-2 rounded-full bg-[#E1B534] px-6 py-3 text-sm font-medium text-white shadow-sm hover:opacity-95 transition-opacity"
           >
             <MessageCircle className="size-4" aria-hidden="true" />
-            Ask AI
+            {faq.askAiBtn}
           </button>
           <p className="mt-3 text-xs text-[#6E7771]">
-            Still have questions? Chat with our assistant.
+            {faq.stillQuestions}
           </p>
         </div>
       </section>

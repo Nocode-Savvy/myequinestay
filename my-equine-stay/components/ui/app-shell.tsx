@@ -13,6 +13,13 @@ import { ScrollToTop } from "@/components/ui/scroll-to-top";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith("/admin");
+  const isAuthRoute =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
+    pathname === "/confirm-email" ||
+    pathname?.startsWith("/auth");
 
   const [isAskAiOpen, setIsAskAiOpen] = useState(false);
   const [isReportProblemOpen, setIsReportProblemOpen] = useState(false);
@@ -31,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <LanguageProvider>
       <Navbar />
       <main className="flex-1 w-full max-w-full min-w-0">{children}</main>
-      <Footer />
+      {!isAuthRoute && <Footer />}
 
       {/* Floating: Scroll To Top button */}
       <ScrollToTop className="bottom-20 right-5 sm:bottom-20 sm:right-6" />
