@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/filter-modal";
 import type { ListingWithPhotos } from "@/types/database";
 import { useLanguage } from "@/lib/i18n/context";
-import { GoogleMapWrapper } from "@/components/ui/google-map";
+import { GoogleMapWrapper, MapErrorBoundary } from "@/components/ui/google-map";
 import { getLocalizedListing } from "@/lib/i18n/listing-localization";
 import { propertyTypeLabel } from "@/lib/utils";
 
@@ -121,11 +121,13 @@ const categoryLabels: Record<string, string> = {
    ============================================================ */
 function GoogleMapView({ listings }: { listings: ListingWithPhotos[] }) {
   return (
-    <GoogleMapWrapper
-      mode="browse"
-      listings={listings}
-      className="w-full h-[50vh] md:h-[550px] lg:h-[650px] rounded-2xl overflow-hidden border border-[#E5E0D6] bg-white md:sticky md:top-24"
-    />
+    <MapErrorBoundary>
+      <GoogleMapWrapper
+        mode="browse"
+        listings={listings}
+        className="w-full h-[50vh] md:h-[550px] lg:h-[650px] rounded-2xl overflow-hidden border border-[#E5E0D6] bg-white md:sticky md:top-24"
+      />
+    </MapErrorBoundary>
   );
 }
 

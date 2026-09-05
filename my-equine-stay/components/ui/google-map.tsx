@@ -16,7 +16,7 @@
  *  - The fallback is a styled "Map unavailable" card. No raw JS errors are surfaced.
  */
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback, Component, type ReactNode } from "react";
 import {
   APIProvider,
   Map,
@@ -25,6 +25,48 @@ import {
 } from "@vis.gl/react-google-maps";
 import { MapPin, AlertTriangle } from "lucide-react";
 import type { ListingWithPhotos } from "@/types/database";
+
+/* ─────────────────────────────────────────────────────────────
+   Map Error Boundary — catches any unmount/mount or rendering errors
+   ───────────────────────────────────────────────────────────── */
+
+interface MapErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+  className?: string;
+}
+
+interface MapErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+export class MapErrorBoundary extends Component<MapErrorBoundaryProps, MapErrorBoundaryState> {
+  constructor(props: MapErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): MapErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Map component error caught by MapErrorBoundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) return this.props.fallback;
+      return (
+        <div className={`relative ${this.props.className ?? ""}`} data-testid="google-map-container">
+          <MapUnavailable message="An issue occurred while displaying the map. Toggling map view will restore it." />
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────
    Internal sub-components
@@ -43,7 +85,7 @@ function MapSkeleton() {
 }
 
 /** "Map unavailable" fallback — shown on missing or invalid API key */
-function MapUnavailable({ message }: { message?: string }) {
+export function MapUnavailable({ message }: { message?: string }) {
   return (
     <div
       data-testid="map-unavailable"
@@ -78,11 +120,13 @@ function BrowseMarkers({ listings }: BrowseMarkersProps) {
   return (
     <>
       {listings.map((listing) => {
-        if (!listing.latitude || !listing.longitude) return null;
+        const lat = Number(listing.latitude);
+        const lng = Number(listing.longitude);
+        if (!isFinite(lat) || !isFinite(lng) || lat === 0 || lng === 0) return null;
         return (
           <AdvancedMarker
             key={listing.id}
-            position={{ lat: listing.latitude, lng: listing.longitude }}
+            position={{ lat, lng }}
           >
             <div className="px-2.5 py-1 bg-[#1F3A2B] text-white rounded-full text-xs font-semibold shadow-md cursor-pointer hover:scale-110 transition-transform select-none">
               ${listing.price_per_night}
@@ -185,35 +229,39 @@ export function GoogleMapWrapper(props: GoogleMapProps) {
   const defaultZoom = props.mode === "browse" ? 10 : 13;
 
   return (
-    <div
-      className={`relative ${props.className ?? ""}`}
-      data-testid="google-map-container"
-    >
-      <APIProvider
-        apiKey={apiKey}
-        onError={() => setLoadError(true)}
+    <MapErrorBoundary className={props.className}>
+      <div
+        className={`relative ${props.className ?? ""}`}
+        data-testid="google-map-container"
       >
-        <Map
-          mapId="mes-map"
-          defaultCenter={defaultCenter}
-          defaultZoom={defaultZoom}
-          gestureHandling="cooperative"
-          disableDefaultUI={false}
-          mapTypeId="terrain"
-          style={{ width: "100%", height: "100%" }}
+        <APIProvider
+          apiKey={apiKey}
+          onError={() => setLoadError(true)}
         >
-          {props.mode === "browse" && (
-            <BrowseMarkers listings={props.listings} />
-          )}
+          <Map
+            mapId="mes-map"
+            reuseMaps={true}
+            defaultCenter={defaultCenter}
+            defaultZoom={defaultZoom}
+            gestureHandling="cooperative"
+            disableDefaultUI={false}
+            mapTypeId="terrain"
+            style={{ width: "100%", height: "100%" }}
+          >
+            {props.mode === "browse" && (
+              <BrowseMarkers listings={props.listings} />
+            )}
 
-          {props.mode === "wizard" && (
-            <WizardMarker
-              position={{ lat: props.latitude, lng: props.longitude }}
-              onDragEnd={props.onMarkerDragEnd}
-            />
-          )}
-        </Map>
-      </APIProvider>
-    </div>
+            {props.mode === "wizard" && (
+              <WizardMarker
+                position={{ lat: props.latitude, lng: props.longitude }}
+                onDragEnd={props.onMarkerDragEnd}
+              />
+            )}
+          </Map>
+        </APIProvider>
+      </div>
+    </MapErrorBoundary>
   );
 }
+

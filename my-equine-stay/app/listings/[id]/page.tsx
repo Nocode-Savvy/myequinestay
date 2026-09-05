@@ -17,10 +17,14 @@ import {
   Mail,
   Home,
   CheckCircle2,
+  Bed,
+  Bath,
+  Maximize2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { PhotoLightbox } from "@/components/ui/photo-lightbox";
 import { SAMPLE_LISTINGS } from "@/lib/data/sample-listings";
 import { createClient } from "@/lib/supabase/client";
 import type { ListingWithPhotos } from "@/types/database";
@@ -47,6 +51,8 @@ export default function ListingDetailPage({
   const [loading, setLoading] = useState(true);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
 
@@ -205,165 +211,241 @@ export default function ListingDetailPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pt-6 pb-20">
-      <div className="mx-auto max-w-7xl px-4">
-        {/* Navigation bar */}
-        <div className="flex items-center justify-between py-4 mb-2">
+    <div className="min-h-screen bg-[#FAF7F2] pt-4 sm:pt-6 pb-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Navigation bar - clean Back to results matching Image 3 */}
+        <div className="py-2 mb-2">
           <Link
             href="/search"
-            className="inline-flex items-center gap-1.5 text-sm text-[#6E7771] hover:text-[#1F3A2B] transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-[#6E7771] hover:text-[#1F3A2B] transition-colors font-medium"
           >
             <ArrowLeft size={16} />
             {t.propertyDetail.backToResults}
           </Link>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-[var(--color-sand)] text-[var(--color-charcoal)] hover:bg-[var(--color-cream-dark)] transition-colors"
-            >
-              <Share2 size={14} />
-              {copiedShare ? t.propertyDetail.linkCopied : t.propertyDetail.share}
-            </button>
-            <button
-              onClick={() => setIsSaved(!isSaved)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                isSaved
-                  ? "bg-red-50 text-red-600 border-red-200"
-                  : "bg-white text-[var(--color-charcoal)] border-[var(--color-sand)] hover:bg-[var(--color-cream-dark)]"
-              }`}
-            >
-              <Heart size={14} className={isSaved ? "fill-red-600 text-red-600" : ""} />
-              {isSaved ? t.propertyDetail.saved : t.propertyDetail.save}
-            </button>
-          </div>
         </div>
 
-        {/* Gallery Carousel Header */}
-        <div className="relative rounded-3xl overflow-hidden shadow-[var(--shadow-card)] bg-black mb-8">
-          <div className="relative aspect-[16/9] md:aspect-[21/9] w-full cursor-pointer" onClick={() => setGalleryModalOpen(true)}>
+        {/* Hero Image Carousel matching Image 3 */}
+        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm bg-[#1B221E] mb-3 group">
+          <div
+            className="relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/10] w-full cursor-pointer"
+            onClick={() => {
+              setLightboxIndex(currentPhotoIndex);
+              setLightboxOpen(true);
+            }}
+          >
             <Image
               src={currentPhoto.url}
               alt={localizedListing.title || "Stay photo"}
               fill
               className="object-cover transition-opacity duration-300"
               priority
-              sizes="100vw"
+              sizes="(max-width: 1280px) 100vw, 1280px"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 pointer-events-none" />
 
-            {/* Badges on hero */}
-            <div className="absolute top-4 left-4 flex gap-2">
-              <Badge variant="gold" size="md">
-                {propertyTypeLabel(localizedListing.property_type || "equestrian_farm", language)}
-              </Badge>
+            {/* Badges on hero top-left */}
+            <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex flex-wrap gap-2 pointer-events-none">
               {listing.is_featured && (
-                <Badge variant="forest" size="md" className="bg-white/90 text-[var(--color-forest)]">
+                <Badge variant="forest" size="md" className="bg-white/95 text-[#1F3A2B] font-semibold shadow-sm">
                   {t.propertyDetail.featuredStay}
                 </Badge>
               )}
             </div>
 
-            {/* Counter */}
-            <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-full">
-              {currentPhotoIndex + 1} / {photos.length} {t.propertyDetail.photos}
+            {/* Click to expand hint on hover */}
+            <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 pointer-events-none">
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/70 text-white text-xs font-medium backdrop-blur-sm shadow-md">
+                <Maximize2 size={13} />
+                Click to expand photo
+              </span>
+            </div>
+
+            {/* Counter badge in bottom right (e.g. 1 / 5) matching Image 3 */}
+            <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 bg-black/75 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-md">
+              {currentPhotoIndex + 1} / {photos.length}
             </div>
           </div>
 
-          {/* Prev / Next controls */}
+          {/* Prev / Next controls floating circular buttons */}
           {photos.length > 1 && (
             <>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setCurrentPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
                 }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-[var(--color-forest)] flex items-center justify-center shadow-lg transition-transform hover:scale-105"
+                className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-white/90 hover:bg-white text-[#1B221E] flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
                 aria-label="Previous photo"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setCurrentPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
                 }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-[var(--color-forest)] flex items-center justify-center shadow-lg transition-transform hover:scale-105"
+                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 size-9 sm:size-10 rounded-full bg-white/90 hover:bg-white text-[#1B221E] flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
                 aria-label="Next photo"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
               </button>
             </>
           )}
+        </div>
 
-          {/* Thumbnails row */}
-          {photos.length > 1 && (
-            <div className="bg-black/90 p-3 flex gap-2 overflow-x-auto">
-              {photos.map((photo, idx) => (
-                <button
-                  key={photo.id || idx}
-                  onClick={() => setCurrentPhotoIndex(idx)}
-                  className={`relative w-20 h-14 rounded-lg overflow-hidden flex-shrink-0 transition-opacity ${
-                    idx === currentPhotoIndex ? "ring-2 ring-[var(--color-gold)] opacity-100" : "opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <Image src={photo.url} alt={`Thumbnail ${idx + 1}`} fill className="object-cover" />
-                </button>
-              ))}
+        {/* Thumbnail Strip directly beneath hero on warm background matching Image 3 */}
+        {photos.length > 1 && (
+          <div className="flex gap-2 sm:gap-2.5 overflow-x-auto pb-2 mb-6 sm:mb-8 scrollbar-none">
+            {photos.map((photo, idx) => (
+              <button
+                key={photo.id || idx}
+                type="button"
+                onClick={() => setCurrentPhotoIndex(idx)}
+                onDoubleClick={() => {
+                  setLightboxIndex(idx);
+                  setLightboxOpen(true);
+                }}
+                className={`relative w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden flex-shrink-0 transition-all ${
+                  idx === currentPhotoIndex
+                    ? "border-2 border-[#E1B534] ring-2 ring-[#E1B534]/50 shadow-sm opacity-100 scale-[1.02]"
+                    : "opacity-70 hover:opacity-100 border border-transparent"
+                }`}
+                aria-label={`Select photo ${idx + 1}`}
+              >
+                <Image
+                  src={photo.url}
+                  alt={`Thumbnail ${idx + 1}`}
+                  fill
+                  sizes="100px"
+                  className="object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Header section: Category Tag, Title + Circular Action Buttons, Location matching Image 3 */}
+        <div className="mb-6">
+          <p className="text-xs sm:text-sm font-semibold tracking-wider text-[#C69214] uppercase mb-1.5">
+            {propertyTypeLabel(localizedListing.property_type || "equestrian_farm", language)}
+          </p>
+
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#1F3A2B] font-medium leading-tight">
+              {localizedListing.title}
+            </h1>
+
+            {/* Circular Share & Save Buttons matching Image 3 */}
+            <div className="relative flex items-center gap-2.5 shrink-0 pt-0.5">
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label="Share listing"
+                title="Share"
+                className="size-10 sm:size-11 rounded-full bg-white border border-[#E5E0D6] text-[#1B221E] hover:border-[#1F3A2B] flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95"
+              >
+                <Share2 size={17} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsSaved(!isSaved)}
+                aria-label="Save to favorites"
+                title="Save"
+                className={`size-10 sm:size-11 rounded-full border flex items-center justify-center shadow-sm transition-all hover:scale-105 active:scale-95 ${
+                  isSaved
+                    ? "bg-red-50 text-red-600 border-red-200"
+                    : "bg-white text-[#1B221E] border-[#E5E0D6] hover:border-[#1F3A2B]"
+                }`}
+              >
+                <Heart size={17} className={isSaved ? "fill-red-600 text-red-600" : ""} />
+              </button>
+
+              {copiedShare && (
+                <div className="absolute right-0 top-12 bg-[#1F3A2B] text-white text-xs px-2.5 py-1 rounded-md shadow-md whitespace-nowrap z-20">
+                  {t.propertyDetail.linkCopied}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Location line */}
+          <div className="flex items-center gap-1.5 text-sm text-[#6E7771] mb-4">
+            <MapPin size={16} className="text-[#C69214] shrink-0" />
+            <span>
+              {listing.city}, {listing.state} {listing.zip_code} {listing.city?.toLowerCase().includes("ocala") ? "· 2.6 miles to WEC" : `· ${t.propertyDetail.approximateZoneBadge.replace("{city}", listing.city)}`}
+            </span>
+          </div>
+
+          {/* Location / Biosecurity Notice bar with (i) icon */}
+          <div className="flex items-center gap-2 py-3 border-t border-b border-[#E5E0D6] text-xs text-[#6E7771]">
+            <div className="size-4 rounded-full border border-[#6E7771] flex items-center justify-center text-[10px] font-serif font-bold text-[#6E7771] shrink-0">
+              i
+            </div>
+            <span>
+              {t.propertyDetail.approximateZoneBadge.replace("{city}", listing.city)} · Exact address provided upon confirmed booking
+            </span>
+          </div>
+        </div>
+
+        {/* Quick stats pill bar with gold labels matching Image 3 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-5 bg-white rounded-2xl shadow-sm border border-[#E5E0D6] mb-10">
+          {listing.bedrooms > 0 && (
+            <div className="flex items-center gap-3 p-1.5">
+              <div className="size-9 rounded-xl bg-[#FAF7F2] border border-[#E5E0D6] flex items-center justify-center text-[#C69214] shrink-0">
+                <Bed size={18} />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase text-[#C69214] font-bold tracking-wider block">
+                  {t.propertyDetail.bedrooms}
+                </span>
+                <span className="font-serif font-bold text-xl text-[#1F3A2B]">{listing.bedrooms}</span>
+              </div>
             </div>
           )}
+          {listing.bathrooms > 0 && (
+            <div className="flex items-center gap-3 p-1.5">
+              <div className="size-9 rounded-xl bg-[#FAF7F2] border border-[#E5E0D6] flex items-center justify-center text-[#C69214] shrink-0">
+                <Bath size={18} />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase text-[#C69214] font-bold tracking-wider block">
+                  {t.propertyDetail.bathrooms}
+                </span>
+                <span className="font-serif font-bold text-xl text-[#1F3A2B]">{listing.bathrooms}</span>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-3 p-1.5">
+            <div className="size-9 rounded-xl bg-[#FAF7F2] border border-[#E5E0D6] flex items-center justify-center text-[#C69214] shrink-0">
+              <Home size={18} />
+            </div>
+            <div>
+              <span className="text-[10px] uppercase text-[#C69214] font-bold tracking-wider block">
+                {t.propertyDetail.stalls}
+              </span>
+              <span className="font-serif font-bold text-xl text-[#C69214]">{listing.stalls}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-1.5">
+            <div className="size-9 rounded-xl bg-[#FAF7F2] border border-[#E5E0D6] flex items-center justify-center text-[#1F3A2B] shrink-0">
+              <Shield size={18} />
+            </div>
+            <div>
+              <span className="text-[10px] uppercase text-[#C69214] font-bold tracking-wider block">
+                {t.propertyDetail.horseCap}
+              </span>
+              <span className="font-serif font-bold text-xl text-[#1F3A2B]">{listing.horse_capacity}</span>
+            </div>
+          </div>
         </div>
 
         {/* Main Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Left 2 Columns: Details, Facilities, Amenities, Calendar */}
           <div className="lg:col-span-2 space-y-10">
-            {/* Header info */}
-            <div>
-              <div className="flex items-center gap-2 text-sm text-[var(--color-gold)] font-semibold uppercase tracking-wider mb-2">
-                <span>{propertyTypeLabel(localizedListing.property_type || "equestrian_farm", language)}</span>
-                <span>•</span>
-                <span>{listing.city}, FL</span>
-              </div>
-              <h1 className="text-display-lg text-[var(--color-forest)] mb-3">
-                {localizedListing.title}
-              </h1>
-              <p className="text-sm text-[var(--color-muted)] flex items-center gap-1.5">
-                <MapPin size={16} className="text-[var(--color-gold)]" />
-                {listing.city}, {listing.state} {listing.zip_code} ({t.propertyDetail.approximateZoneBadge.replace("{city}", listing.city)})
-              </p>
-            </div>
-
-            {/* Quick stats pill bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-white rounded-2xl shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
-              {listing.bedrooms > 0 && (
-                <div className="text-center p-2">
-                  <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
-                    {t.propertyDetail.bedrooms}
-                  </span>
-                  <span className="font-serif font-bold text-2xl text-[var(--color-forest)]">{listing.bedrooms}</span>
-                </div>
-              )}
-              {listing.bathrooms > 0 && (
-                <div className="text-center p-2">
-                  <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
-                    {t.propertyDetail.bathrooms}
-                  </span>
-                  <span className="font-serif font-bold text-2xl text-[var(--color-forest)]">{listing.bathrooms}</span>
-                </div>
-              )}
-              <div className="text-center p-2">
-                <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
-                  {t.propertyDetail.stalls}
-                </span>
-                <span className="font-serif font-bold text-2xl text-[var(--color-gold)]">{listing.stalls}</span>
-              </div>
-              <div className="text-center p-2">
-                <span className="text-xs uppercase text-[var(--color-muted)] font-semibold block">
-                  {t.propertyDetail.horseCap}
-                </span>
-                <span className="font-serif font-bold text-2xl text-[var(--color-forest)]">{listing.horse_capacity}</span>
-              </div>
-            </div>
 
             {/* About the property */}
             <div className="bg-white rounded-3xl p-8 shadow-[var(--shadow-card)] border border-[var(--color-sand-light)]">
@@ -732,7 +814,7 @@ export default function ListingDetailPage({
         </div>
       </div>
 
-      {/* Fullscreen Photo Gallery Modal */}
+      {/* Photo Gallery Modal */}
       <Modal
         isOpen={galleryModalOpen}
         onClose={() => setGalleryModalOpen(false)}
@@ -741,12 +823,40 @@ export default function ListingDetailPage({
       >
         <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
           {photos.map((photo, i) => (
-            <div key={photo.id || i} className="relative aspect-[16/10] rounded-2xl overflow-hidden">
-              <Image src={photo.url} alt={`${localizedListing.title} photo ${i + 1}`} fill className="object-cover" />
+            <div
+              key={photo.id || i}
+              onClick={() => {
+                setLightboxIndex(i);
+                setGalleryModalOpen(false);
+                setLightboxOpen(true);
+              }}
+              className="relative aspect-[16/10] rounded-2xl overflow-hidden cursor-pointer group shadow-sm"
+            >
+              <Image
+                src={photo.url}
+                alt={`${localizedListing.title} photo ${i + 1}`}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 bg-black/75 text-white text-xs px-3.5 py-1.5 rounded-full transition-opacity backdrop-blur-sm flex items-center gap-1.5 shadow-md">
+                  <Maximize2 size={13} />
+                  Click to view full size
+                </span>
+              </div>
             </div>
           ))}
         </div>
       </Modal>
+
+      {/* Fullscreen Photo Lightbox Viewer */}
+      <PhotoLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        photos={photos}
+        initialIndex={lightboxIndex}
+        title={localizedListing.title}
+      />
     </div>
   );
 }
